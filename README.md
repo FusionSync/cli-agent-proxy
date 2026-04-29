@@ -118,6 +118,7 @@ Sandbox Layer
 ```
 
 The design source of truth is [docs/product-design.md](docs/product-design.md).
+The API DTO schema is documented in [docs/api-schema.md](docs/api-schema.md).
 Claude Code provider details are documented in
 [docs/claude-code-provider.md](docs/claude-code-provider.md).
 
@@ -149,16 +150,41 @@ POST /v1/sessions
 {
   "provider": "claude-code",
   "conversation_id": "bamboo-conv-001",
-  "model": "private-sonnet",
-  "cwd": "/workspaces/tenant-a/bamboo-conv-001",
+  "model": {
+    "name": "private-sonnet",
+    "fallback": "private-haiku"
+  },
+  "runtime": {
+    "base_url": "http://model-gateway:8080",
+    "api_key_ref": "tenant-a/anthropic",
+    "cwd": "/workspaces/tenant-a/bamboo-conv-001",
+    "env": {}
+  },
+  "generation": {
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "max_tokens": 4096
+  },
+  "policy": {
+    "execution_mode": "approve_edits",
+    "allowed_tools": ["Read", "Write"],
+    "disallowed_tools": ["Bash"],
+    "filesystem": "workspace_only",
+    "network": "deny_by_default",
+    "allowed_hosts": ["model-gateway.internal"]
+  },
   "system_prompt": "You are Bamboo's coding agent.",
-  "permission_mode": "acceptEdits",
-  "allowed_tools": ["Read", "Write", "Bash"],
-  "env": {
-    "ANTHROPIC_BASE_URL": "http://model-gateway:8080"
+  "provider_options": {
+    "resume": "previous-claude-session-id",
+    "max_turns": 5,
+    "mcp_servers": {}
   }
 }
 ```
+
+Providers have different support levels for each DTO group. Use
+`GET /v1/providers/{provider}/capabilities` to inspect support for `model`,
+`runtime`, `generation`, `policy`, and `provider_options`.
 
 ### Stream Message
 

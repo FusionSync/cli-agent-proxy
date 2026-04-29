@@ -36,9 +36,33 @@ uv run uvicorn cli_agent_proxy.main:app --host 0.0.0.0 --port 9000
 `POST /v1/sessions` accepts the common session fields and maps them to
 `ClaudeAgentOptions`.
 
-Direct fields:
+Standard DTO groups:
 
 - `model`
+- `runtime`
+- `generation`
+- `policy`
+- `provider_options`
+
+Claude Code currently maps:
+
+- `model.name` -> `ClaudeAgentOptions.model`
+- `model.fallback` -> `ClaudeAgentOptions.fallback_model`
+- `runtime.base_url` -> `env.ANTHROPIC_BASE_URL`
+- `runtime.api_key_ref` -> `env.CLI_AGENT_PROXY_API_KEY_REF`
+- `runtime.cwd` -> `ClaudeAgentOptions.cwd`
+- `runtime.env` -> `ClaudeAgentOptions.env`
+- `policy.execution_mode` -> `ClaudeAgentOptions.permission_mode`
+- `policy.allowed_tools` -> `ClaudeAgentOptions.allowed_tools`
+- `policy.disallowed_tools` -> `ClaudeAgentOptions.disallowed_tools`
+
+The `generation` DTO is part of the standard API, but Claude Agent SDK does not
+currently expose direct `temperature`, `top_p`, `max_tokens`, or `stop` options.
+The Claude Code provider declares this as `unsupported` in capabilities.
+
+Backward-compatible flat fields still accepted during early development:
+
+- `model` as a string
 - `cwd`
 - `system_prompt`
 - `permission_mode`
@@ -77,17 +101,31 @@ Example:
 {
   "provider": "claude-code",
   "conversation_id": "conv_001",
-  "model": "private-sonnet",
-  "cwd": "/workspaces/tenant-a/conv_001",
-  "system_prompt": "You are an isolated coding agent.",
-  "permission_mode": "acceptEdits",
-  "allowed_tools": ["Read", "Write"],
-  "disallowed_tools": ["Bash"],
-  "env": {
-    "ANTHROPIC_BASE_URL": "http://model-gateway.internal",
-    "ANTHROPIC_API_KEY": "placeholder"
+  "model": {
+    "name": "private-sonnet",
+    "fallback": "private-haiku"
   },
-  "metadata": {
+  "runtime": {
+    "base_url": "http://model-gateway.internal",
+    "api_key_ref": "tenant/anthropic",
+    "cwd": "/workspaces/tenant-a/conv_001",
+    "env": {}
+  },
+  "generation": {
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "max_tokens": 4096
+  },
+  "policy": {
+    "execution_mode": "approve_edits",
+    "allowed_tools": ["Read", "Write"],
+    "disallowed_tools": ["Bash"],
+    "filesystem": "workspace_only",
+    "network": "deny_by_default",
+    "allowed_hosts": ["model-gateway.internal"]
+  },
+  "system_prompt": "You are an isolated coding agent.",
+  "provider_options": {
     "max_turns": 5,
     "resume": "previous-claude-session-id"
   }

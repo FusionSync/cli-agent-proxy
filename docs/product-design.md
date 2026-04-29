@@ -233,16 +233,35 @@ Create session example:
   "user_id": "user_001",
   "provider": "claude-code",
   "conversation_id": "conv_001",
-  "model": "private-sonnet",
+  "model": {
+    "name": "private-sonnet",
+    "fallback": "private-haiku"
+  },
+  "runtime": {
+    "base_url": "http://model-gateway.internal",
+    "api_key_ref": "tenant_001/anthropic",
+    "cwd": "/workspaces/tenant_001/conv_001",
+    "env": {}
+  },
+  "generation": {
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "max_tokens": 4096
+  },
   "workspace": {
     "mode": "ephemeral"
   },
   "policy": {
-    "filesystem": "workspace-only",
-    "network": "deny-by-default",
+    "execution_mode": "approve_edits",
+    "filesystem": "workspace_only",
+    "network": "deny_by_default",
     "allowed_hosts": ["model-gateway.internal"],
-    "allowed_tools": ["read", "write", "shell"],
-    "shell_mode": "approval-required"
+    "allowed_tools": ["read", "write"],
+    "disallowed_tools": ["shell"]
+  },
+  "provider_options": {
+    "resume": "previous-provider-session-id",
+    "max_turns": 5
   }
 }
 ```

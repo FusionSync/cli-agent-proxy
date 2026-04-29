@@ -11,7 +11,7 @@ from claude_agent_sdk.types import (
 )
 
 from cli_agent_proxy.providers.claude_code import ClaudeCodeProvider
-from cli_agent_proxy.schemas import CreateSessionRequest
+from cli_agent_proxy.schemas import CreateSessionRequest, ExecutionMode
 
 
 class StubClaudeClient:
@@ -160,6 +160,60 @@ def test_claude_code_provider_capabilities():
     assert capabilities.supports_streaming is True
     assert capabilities.supports_resume is True
     assert "model" in capabilities.session_config_fields
+    assert capabilities.config_schema["model"].level == "supported"
+    assert capabilities.config_schema["generation"].level == "unsupported"
+
+
+@pytest.mark.asyncio
+async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options():
+    captured_options = []
+    stub_client = StubClaudeClient([])
+
+    async def fake_factory(options):
+        captured_options.append(options)
+        await stub_client.connect()
+        return stub_client
+
+    provider = ClaudeCodeProvider(client_factory=fake_factory)
+    request = CreateSessionRequest(
+        provider="claude-code",
+        conversation_id="conv-structured",
+        model={"name": "private-sonnet", "fallback": "private-haiku"},
+        runtime={
+            "base_url": "http://model-gateway",
+            "api_key_ref": "tenant/anthropic",
+            "cwd": "/tmp/structured",
+            "env": {"EXTRA": "1"},
+        },
+        policy={
+            "execution_mode": ExecutionMode.APPROVE_EDITS,
+            "allowed_tools": ["Read", "Write"],
+            "disallowed_tools": ["Bash"],
+            "filesystem": "workspace_only",
+            "network": "deny_by_default",
+            "allowed_hosts": ["model-gateway"],
+        },
+        generation={"temperature": 0.2, "top_p": 0.9, "max_tokens": 4096},
+        provider_options={"resume": "resume-id", "max_turns": 4},
+    )
+
+    await provider.create_session("session-structured", request)
+    _ = [event async for event in provider.stream_message("session-structured", "hello")]
+
+    options = captured_options[0]
+    assert options.model == "private-sonnet"
+    assert options.fallback_model == "private-haiku"
+    assert str(options.cwd) == "/tmp/structured"
+    assert options.permission_mode == "acceptEdits"
+    assert options.allowed_tools == ["Read", "Write"]
+    assert options.disallowed_tools == ["Bash"]
+    assert options.env == {
+        "ANTHROPIC_BASE_URL": "http://model-gateway",
+        "CLI_AGENT_PROXY_API_KEY_REF": "tenant/anthropic",
+        "EXTRA": "1",
+    }
+    assert options.resume == "resume-id"
+    assert options.max_turns == 4
 
 
 @pytest.mark.asyncio

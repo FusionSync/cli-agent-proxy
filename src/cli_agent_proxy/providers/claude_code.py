@@ -3,7 +3,15 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from cli_agent_proxy.providers.base import AgentProvider
-from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities, ProviderName
+from cli_agent_proxy.schemas import (
+    AgentEvent,
+    CreateSessionRequest,
+    ExecutionMode,
+    ProviderCapabilities,
+    ProviderName,
+    ProviderOptionSupport,
+    SupportLevel,
+)
 
 ClaudeClientFactory = Callable[[Any], Awaitable[Any]]
 
@@ -25,7 +33,7 @@ class ClaudeCodeProvider(AgentProvider):
             type="start",
             session_id=session_id,
             conversation_id=request.conversation_id,
-            data={"provider": self.name, "model": request.model},
+            data={"provider": self.name, "model": request.model.name},
         )
 
         try:
@@ -77,21 +85,38 @@ class ClaudeCodeProvider(AgentProvider):
         from claude_agent_sdk import ClaudeAgentOptions
 
         metadata = request.metadata
+        provider_options = {**request.provider_options, **metadata}
+        env = {
+            **request.runtime.env,
+            **request.env,
+        }
+        if request.runtime.base_url:
+            env["ANTHROPIC_BASE_URL"] = request.runtime.base_url
+        if request.runtime.api_key_ref:
+            env["CLI_AGENT_PROXY_API_KEY_REF"] = request.runtime.api_key_ref
+
         options_kwargs: dict[str, Any] = {"session_id": str(metadata.get("session_id") or session_id)}
-        if request.cwd:
-            options_kwargs["cwd"] = request.cwd
-        if request.model:
-            options_kwargs["model"] = request.model
+        cwd = request.runtime.cwd or request.cwd
+        if cwd:
+            options_kwargs["cwd"] = cwd
+        model = request.model.name
+        if model:
+            options_kwargs["model"] = model
+        if request.model.fallback:
+            options_kwargs["fallback_model"] = request.model.fallback
         if request.system_prompt:
             options_kwargs["system_prompt"] = request.system_prompt
-        if request.permission_mode:
-            options_kwargs["permission_mode"] = request.permission_mode
-        if request.allowed_tools:
-            options_kwargs["allowed_tools"] = request.allowed_tools
-        if request.disallowed_tools:
-            options_kwargs["disallowed_tools"] = request.disallowed_tools
-        if request.env:
-            options_kwargs["env"] = request.env
+        permission_mode = self._map_permission_mode(request)
+        if permission_mode:
+            options_kwargs["permission_mode"] = permission_mode
+        allowed_tools = request.policy.allowed_tools or request.allowed_tools
+        if allowed_tools:
+            options_kwargs["allowed_tools"] = allowed_tools
+        disallowed_tools = request.policy.disallowed_tools or request.disallowed_tools
+        if disallowed_tools:
+            options_kwargs["disallowed_tools"] = disallowed_tools
+        if env:
+            options_kwargs["env"] = env
 
         for key in (
             "resume",
@@ -117,10 +142,21 @@ class ClaudeCodeProvider(AgentProvider):
             "enable_file_checkpointing",
             "load_timeout_ms",
         ):
-            if key in metadata and metadata[key] is not None:
-                options_kwargs[key] = metadata[key]
+            if key in provider_options and provider_options[key] is not None:
+                options_kwargs[key] = provider_options[key]
 
         return ClaudeAgentOptions(**options_kwargs)
+
+    def _map_permission_mode(self, request: CreateSessionRequest) -> str | None:
+        if request.permission_mode:
+            return request.permission_mode
+        return {
+            ExecutionMode.DEFAULT: None,
+            ExecutionMode.READ_ONLY: "plan",
+            ExecutionMode.APPROVE_EDITS: "acceptEdits",
+            ExecutionMode.AUTO: "auto",
+            ExecutionMode.BYPASS: "bypassPermissions",
+        }[request.policy.execution_mode]
 
     def _map_sdk_message(self, session_id: str, conversation_id: str, sdk_message: Any) -> list[AgentEvent]:
         message_type = getattr(sdk_message, "type", sdk_message.__class__.__name__)
@@ -235,17 +271,66 @@ class ClaudeCodeProvider(AgentProvider):
             supports_model_switch=True,
             session_config_fields=[
                 "model",
-                "cwd",
+                "model.name",
+                "model.fallback",
+                "runtime.base_url",
+                "runtime.api_key_ref",
+                "runtime.cwd",
+                "runtime.env",
+                "generation",
+                "policy.execution_mode",
+                "policy.allowed_tools",
+                "policy.disallowed_tools",
+                "provider_options",
                 "system_prompt",
-                "permission_mode",
-                "allowed_tools",
-                "disallowed_tools",
-                "env",
-                "metadata.resume",
-                "metadata.max_turns",
-                "metadata.fallback_model",
-                "metadata.mcp_servers",
             ],
+            config_schema={
+                "model": ProviderOptionSupport(
+                    level=SupportLevel.SUPPORTED,
+                    fields=["name", "fallback"],
+                ),
+                "runtime": ProviderOptionSupport(
+                    level=SupportLevel.PARTIAL,
+                    fields=["base_url", "api_key_ref", "cwd", "env"],
+                    notes="base_url maps to ANTHROPIC_BASE_URL. api_key_ref is exposed as CLI_AGENT_PROXY_API_KEY_REF until secret resolution is implemented.",
+                ),
+                "generation": ProviderOptionSupport(
+                    level=SupportLevel.UNSUPPORTED,
+                    fields=["temperature", "top_p", "max_tokens", "stop"],
+                    notes="Claude Agent SDK options do not currently expose these generation controls directly.",
+                ),
+                "policy": ProviderOptionSupport(
+                    level=SupportLevel.PARTIAL,
+                    fields=["execution_mode", "allowed_tools", "disallowed_tools"],
+                    notes="execution_mode maps to Claude permission_mode. Filesystem and network policy require sandbox enforcement.",
+                ),
+                "provider_options": ProviderOptionSupport(
+                    level=SupportLevel.PROVIDER_SPECIFIC,
+                    fields=[
+                        "resume",
+                        "continue_conversation",
+                        "max_turns",
+                        "max_budget_usd",
+                        "mcp_servers",
+                        "cli_path",
+                        "settings",
+                        "add_dirs",
+                        "extra_args",
+                        "max_buffer_size",
+                        "permission_prompt_tool_name",
+                        "user",
+                        "include_partial_messages",
+                        "fork_session",
+                        "setting_sources",
+                        "skills",
+                        "max_thinking_tokens",
+                        "effort",
+                        "output_format",
+                        "enable_file_checkpointing",
+                        "load_timeout_ms",
+                    ],
+                ),
+            },
             event_types=[
                 "start",
                 "ai_chunk",
