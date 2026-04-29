@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cli-agent-proxy"
+version = "0.1.0"
+description = "Unified HTTP/SSE runtime proxy for CLI coding agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "FusionSync" },
+]
+keywords = ["agent", "claude-code", "codex", "cli-agent", "sse", "sandbox"]
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.30,<1.0",
+  "pydantic>=2.8,<3.0",
+  "claude-agent-sdk>=0.1.20,<0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+  "pytest-asyncio>=0.23,<1.0",
+  "httpx>=0.27,<1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/FusionSync/cli-agent-proxy"
+Repository = "https://github.com/FusionSync/cli-agent-proxy"
+Documentation = "https://github.com/FusionSync/cli-agent-proxy/tree/main/docs"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
