@@ -55,7 +55,10 @@ Current drivers:
 
 - `LocalUnsafeSandboxDriver`: development only, provider runs in the API
   process.
-- `DockerSandboxDriver`: planned, one Docker container per session.
+- `DockerSandboxDriver`: implemented as the managed runtime specification
+  boundary. It allocates server-owned workspaces, builds hardened container
+  specs, validates unsafe managed policies, and delegates execution to a
+  `DockerRuntimeClient`.
 
 Future drivers:
 
@@ -81,11 +84,22 @@ as the managed production runtime.
 
 ## 5. Docker Driver Target
 
-The Docker driver should implement:
+The Docker path is split into two layers.
+
+Implemented now:
 
 ```text
 POST /v1/sessions
+  -> validate managed policy guardrails
   -> create server-owned workspace
+  -> build DockerContainerSpec
+  -> delegate start/query/interrupt/close to DockerRuntimeClient
+  -> clean up workspace according to retention policy
+```
+
+Still planned:
+
+```text
   -> resolve short-lived secret references
   -> create isolated Docker network
   -> start non-root provider runtime container
@@ -108,6 +122,9 @@ Required hardening defaults:
 - kill escalation after failed graceful interrupt.
 
 The Docker socket must not be mounted into the public API container.
+The current code does not import or call a Docker SDK directly; the engine
+adapter belongs behind `DockerRuntimeClient` so a sandbox manager can own Docker
+authority separately from the public API process.
 
 ## 6. Runtime Protocol
 
@@ -127,6 +144,18 @@ The Provider Runtime should normalize SDK/CLI events before forwarding them.
 Raw provider events are allowed for diagnostics, but product integrations should
 not rely on raw event shape.
 
+The current code represents this boundary with `DockerRuntimeClient`:
+
+```text
+create_session(DockerContainerSpec)
+stream_message(session_id, message_spec) -> AgentEvent stream
+interrupt(session_id)
+close(session_id)
+```
+
+Tests use a fake runtime client so the control-plane contract is verified
+without requiring Docker on the developer machine.
+
 ## 7. Policy Enforcement
 
 `PolicyConfig` has two enforcement layers:
@@ -138,6 +167,16 @@ not rely on raw event shape.
 
 Provider-native enforcement is defense-in-depth. It should never be the only
 security boundary in managed deployments.
+
+Current Docker guardrails reject:
+
+- `execution_mode=bypass`
+- `filesystem=unrestricted`
+- `network=unrestricted`
+- `network=allowlist` without `allowed_hosts`
+
+The Docker driver also ignores caller-supplied `runtime.cwd` for workspace
+placement. Managed workspaces are allocated server-side.
 
 ## 8. Secrets
 
@@ -165,6 +204,10 @@ Workspace handling should be server-owned:
 - delete, snapshot, or keep workspace according to `sandbox.workspace_retention`
 - keep retention policy independent from provider behavior
 
+`LocalWorkspaceAllocator` now implements the single-node filesystem version of
+this contract. It creates one path per `session_id`, rejects unsafe path
+segments, and refuses to release paths outside its configured base directory.
+
 ## 10. Implementation Phases
 
 ### Phase 1: Boundary Refactor
@@ -174,12 +217,20 @@ Workspace handling should be server-owned:
 - Keep current FastAPI and test flow working.
 - Document local unsafe mode clearly.
 
-### Phase 2: Docker Runtime
+### Phase 2A: Docker Runtime Spec Boundary
 
 - Add Docker driver.
 - Add workspace allocator.
+- Add hardened `DockerContainerSpec`.
+- Add runtime client protocol.
+- Add policy guardrails for unsafe managed modes.
+
+### Phase 2B: Docker Engine Runtime
+
 - Add runtime container image for Claude Code.
-- Add internal runtime protocol.
+- Add Docker Engine adapter behind `DockerRuntimeClient`.
+- Add isolated network creation.
+- Add secret resolver integration.
 - Add cleanup and timeout worker.
 
 ### Phase 3: Production Control Plane

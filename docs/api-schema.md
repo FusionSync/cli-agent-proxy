@@ -61,6 +61,15 @@ Fields:
 Managed deployments should resolve `api_key_ref` server-side and should not
 accept raw provider API keys from end users.
 
+In managed Docker mode, `runtime.cwd` is not used as a host path. The sandbox
+driver allocates a server-owned workspace and mounts it into the provider
+runtime as `/workspace`.
+
+In managed Docker mode, arbitrary caller `env` is not copied into the container
+spec. The current driver only emits managed keys such as `AVIARY_SESSION_ID`,
+`AVIARY_PROVIDER`, `AVIARY_WORKSPACE`, `AVIARY_MODEL`, `ANTHROPIC_BASE_URL`,
+and `AVIARY_API_KEY_REF`.
+
 ## GenerationConfig
 
 ```json
@@ -107,6 +116,11 @@ Fields:
 Sandbox enforcement is required before filesystem and network policy can be
 considered production-safe.
 
+Current Docker guardrails reject `bypass`, `filesystem=unrestricted`,
+`network=unrestricted`, and `network=allowlist` without `allowed_hosts`.
+Provider-native permission modes remain defense-in-depth; they are not the
+primary security boundary.
+
 ## SandboxConfig
 
 ```json
@@ -127,6 +141,10 @@ Fields:
 The public schema intentionally avoids exposing Docker socket, host path, or
 privileged container controls. Managed deployments should keep those decisions
 server-side.
+
+`profile` is resolved by the server into a sandbox profile. For Docker this
+maps to image, non-root user, resource limits, read-only rootfs, dropped
+capabilities, and network policy defaults.
 
 ## Provider Options
 

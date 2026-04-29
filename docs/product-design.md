@@ -171,6 +171,11 @@ api container
 Only the Sandbox Manager should have Docker authority. The public API container
 must not mount the Docker socket.
 
+The current code has started this path by implementing the Docker runtime
+specification boundary: server-owned workspace allocation, hardened
+`DockerContainerSpec`, managed policy guardrails, and a `DockerRuntimeClient`
+protocol. The actual Docker Engine adapter and runtime image are still planned.
+
 ### Kubernetes Production
 
 Target large deployment:
@@ -221,7 +226,7 @@ Planned production boundaries:
 - `control/`: session service, policy service, approval service.
 - `storage/`: session, run, event, approval, and audit repositories.
 - `runtime/`: internal protocol between control plane and sandbox runtimes.
-- `sandbox/docker.py`: Docker driver.
+- `sandbox/docker.py`: Docker runtime spec driver and future engine adapter.
 - `sandbox/kubernetes.py`: Kubernetes driver.
 
 ## 8. Public API Draft
