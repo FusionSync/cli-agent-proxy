@@ -23,7 +23,7 @@ has a different runtime model:
 - Claude Code uses the Claude Agent SDK and its own session/process model.
 - Codex, Gemini CLI, OpenCode, and other tools expose different CLI or protocol
   behaviors.
-- Platforms need scope isolation, auditability, policy, quotas, approval
+- Platforms need isolation, auditability, policy, quotas, approval
   gates, and private deployment.
 
 CLI Agent Proxy provides a runtime interface layer so upper-layer products do
@@ -42,8 +42,8 @@ CLI Agent Proxy is:
 
 - **Offline-first**: designed for private cloud, intranet, Docker Compose, and
   Kubernetes deployments.
-- **Platform-oriented**: treats `scope`, `session_id`, and
-  `workspace_id` as first-class concepts.
+- **Platform-oriented**: treats `session_id`, runtime config, policy, and
+  workspace allocation as first-class concepts.
 - **Provider-neutral**: starts with Claude Code, but the contract is designed
   for many Agent and CLI Agent providers.
 - **Event-first**: streams normalized events instead of exposing unstable raw
@@ -93,7 +93,7 @@ Control Plane
   - OpenAPI
   - auth integration hooks
   - session registry
-  - scope policy
+  - runtime policy
   - provider routing
   - workspace allocation
   - audit log

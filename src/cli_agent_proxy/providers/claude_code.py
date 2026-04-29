@@ -29,10 +29,11 @@ class ClaudeCodeProvider(AgentProvider):
 
     async def stream_message(self, session_id: str, message: str) -> AsyncIterator[AgentEvent]:
         request = self._requests[session_id]
+        conversation_id = request.conversation_id or session_id
         yield AgentEvent(
             type="start",
             session_id=session_id,
-            conversation_id=request.conversation_id,
+            conversation_id=conversation_id,
             data={"provider": self.name, "model": request.model.name},
         )
 
@@ -42,13 +43,13 @@ class ClaudeCodeProvider(AgentProvider):
             yield AgentEvent(
                 type="error",
                 session_id=session_id,
-                conversation_id=request.conversation_id,
+                conversation_id=conversation_id,
                 data={"detail": str(exc)},
             )
             return
         await client.query(message, session_id=session_id)
         async for sdk_message in client.receive_messages():
-            for event in self._map_sdk_message(session_id, request.conversation_id, sdk_message):
+            for event in self._map_sdk_message(session_id, conversation_id, sdk_message):
                 yield event
 
     async def interrupt(self, session_id: str) -> None:

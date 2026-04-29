@@ -76,22 +76,16 @@ class ProviderOptionSupport(BaseModel):
     notes: str | None = None
 
 
-class ScopeConfig(BaseModel):
-    type: str | None = Field(default=None, description="Context boundary type, e.g. personal, project, org, tenant, workspace.")
-    id: str | None = Field(default=None, description="Context boundary identifier.")
-    labels: dict[str, str] = Field(default_factory=dict, description="Optional context labels for audit, routing, or quota.")
-
-
 class CreateSessionRequest(BaseModel):
     provider: ProviderName = Field(default=ProviderName.CLAUDE_CODE)
-    scope: ScopeConfig = Field(default_factory=ScopeConfig)
-    conversation_id: str = Field(..., min_length=1)
+    conversation_id: str | None = Field(default=None, min_length=1, description="Caller-provided conversation correlation id.")
 
     model: ModelConfig = Field(default_factory=ModelConfig)
     runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     provider_options: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Non-authoritative caller metadata for correlation only.")
 
     # Backward-compatible flat fields. New integrations should prefer the DTOs above.
     cwd: str | None = None
@@ -100,11 +94,12 @@ class CreateSessionRequest(BaseModel):
     allowed_tools: list[str] = Field(default_factory=list)
     disallowed_tools: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
-    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("conversation_id")
     @classmethod
-    def validate_conversation_id(cls, value: str) -> str:
+    def validate_conversation_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         stripped = value.strip()
         if not stripped:
             raise ValueError("conversation_id cannot be empty")

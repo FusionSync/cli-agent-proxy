@@ -53,14 +53,14 @@ No public control plane is required. Telemetry must be disabled by default or
 absent. All dependencies required for production operation must have offline or
 self-hosted alternatives.
 
-### Scope-Safe Isolation
+### Isolation Boundaries
 
 The primary use case is platform builders embedding third-party agent runtimes into
 their own upper-layer Agent products.
 
-`scope`, `session_id`, and `workspace_id` are first-class
-concepts. A session must not access another scope's files, credentials,
-processes, model tokens, or network resources.
+`session_id`, sandbox identity, workspace allocation, and credential context are
+first-class concepts. A session must not access another session's files,
+credentials, processes, model tokens, or network resources.
 
 Default security boundary:
 
@@ -108,7 +108,7 @@ Control Plane
   - OpenAPI
   - auth integration hooks
   - session registry
-  - scope policy
+  - runtime policy
   - provider routing
   - workspace allocation
   - audit log
@@ -230,13 +230,6 @@ Create session example:
 ```json
 {
   "provider": "claude-code",
-  "scope": {
-    "type": "project",
-    "id": "project_001",
-    "labels": {
-      "owner": "team-a"
-    }
-  },
   "conversation_id": "conv_001",
   "model": {
     "name": "private-sonnet",
@@ -285,10 +278,6 @@ Recommended base fields:
   "type": "message.delta",
   "session_id": "sess_001",
   "run_id": "run_001",
-  "scope": {
-    "type": "project",
-    "id": "project_001"
-  },
   "provider": "claude-code",
   "sequence": 12,
   "timestamp": "2026-04-29T08:00:00Z",
@@ -337,7 +326,7 @@ Minimum production requirements:
 Recommended production security boundary:
 
 ```text
-scope session
+session
   -> dedicated sandbox
     -> dedicated workspace
       -> short-lived credentials
@@ -387,7 +376,7 @@ Memory storage is allowed only for local development.
 
 Production storage should persist:
 
-- scope and user identifiers
+- workspace and credential context
 - session records
 - run records
 - provider session ids
@@ -425,7 +414,7 @@ Application backend -> secure runtime API -> sandboxed agent provider
 ```
 
 Therefore, cc-connect should be used as a reference for provider and UX ideas,
-not as the direct product base unless heavily refactored around strong scope
+not as the direct product base unless heavily refactored around strong runtime
 isolation.
 
 ### CC Switch
@@ -484,7 +473,7 @@ runtime session API required by upper-layer products.
 
 - Do not build only a Claude Code wrapper.
 - Do not let provider-specific raw messages become the public API.
-- Do not treat multi-session as equivalent to multi-scope security.
+- Do not treat multi-session as equivalent to runtime isolation.
 - Do not let users pass arbitrary workspace paths in managed mode.
 - Do not inject long-lived provider credentials into agent sandboxes.
 - Do not default to permission bypass modes.

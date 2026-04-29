@@ -11,44 +11,19 @@ provider-specific options:
 ```json
 {
   "provider": "claude-code",
-  "scope": {
-    "type": "project",
-    "id": "project_001",
-    "labels": {
-      "owner": "team-a"
-    }
-  },
   "conversation_id": "conv_001",
   "model": {},
   "runtime": {},
   "generation": {},
   "policy": {},
-  "provider_options": {}
+  "provider_options": {},
+  "metadata": {}
 }
 ```
 
-## ScopeConfig
-
-```json
-{
-  "type": "project",
-  "id": "project_001",
-  "labels": {
-    "owner": "team-a",
-    "environment": "private"
-  }
-}
-```
-
-`scope` describes the execution boundary or ownership context. It is deliberately
-generic: it can represent a project, workspace, organization, tenant, personal
-context, CI job, or any other boundary chosen by the embedding product.
-
-Fields:
-
-- `type`: boundary type, e.g. `personal`, `project`, `workspace`, `org`, `tenant`.
-- `id`: boundary identifier.
-- `labels`: optional metadata for audit, routing, quotas, or policy selection.
+`metadata` is non-authoritative caller metadata for correlation only. It must
+not be used as a security boundary, authorization source, quota key, or secret
+lookup key.
 
 ## ModelConfig
 
@@ -82,8 +57,8 @@ Fields:
 - `cwd`: working directory allocated by the runtime.
 - `env`: additional provider environment variables.
 
-Production managed deployments should resolve `api_key_ref` server-side and should
-not accept raw provider API keys from end users.
+Managed deployments should resolve `api_key_ref` server-side and should not
+accept raw provider API keys from end users.
 
 ## GenerationConfig
 

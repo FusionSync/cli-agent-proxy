@@ -12,14 +12,15 @@ class StubProvider(AgentProvider):
         self.request = request
 
     async def stream_message(self, session_id: str, message: str):
-        yield AgentEvent(type="start", session_id=session_id, conversation_id=self.request.conversation_id)
+        conversation_id = self.request.conversation_id or session_id
+        yield AgentEvent(type="start", session_id=session_id, conversation_id=conversation_id)
         yield AgentEvent(
             type="ai_chunk",
             session_id=session_id,
-            conversation_id=self.request.conversation_id,
+            conversation_id=conversation_id,
             data={"content": message},
         )
-        yield AgentEvent(type="end", session_id=session_id, conversation_id=self.request.conversation_id)
+        yield AgentEvent(type="end", session_id=session_id, conversation_id=conversation_id)
 
     async def interrupt(self, session_id: str) -> None:
         return None

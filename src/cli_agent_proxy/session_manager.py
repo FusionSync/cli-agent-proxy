@@ -107,7 +107,7 @@ class SessionManager:
         return SessionResponse(
             session_id=session.session_id,
             provider=session.request.provider,
-            conversation_id=session.request.conversation_id,
+            conversation_id=session.request.conversation_id or session.session_id,
             status=session.status,
             provider_session_id=session.provider_session_id,
         )
