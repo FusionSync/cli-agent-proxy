@@ -233,9 +233,17 @@ Docker on the developer machine.
   workspace boundaries.
 - Provider-native enforcement: permission mode, allowed tools, disallowed tools,
   approval prompts, and provider-specific sandbox flags.
+- Aviary approval broker: converts provider permission callbacks into backend
+  approval records and explicit API decisions.
 
 Provider-native enforcement is defense-in-depth. It should never be the only
 security boundary in managed deployments.
+
+In `embedded` mode this broker is essential because Claude Code runs as an
+internal backend implementation. It must not wait on terminal prompts inside
+the Aviary service container. Pending tool requests are exposed through
+`GET /v1/sessions/{session_id}/approvals`, and decisions are submitted through
+`POST /v1/sessions/{session_id}/approvals/{approval_id}:decide`.
 
 Current Docker guardrails reject:
 

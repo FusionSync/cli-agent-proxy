@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -7,12 +8,14 @@ from claude_agent_sdk.types import (
     ResultMessage,
     TextBlock,
     ThinkingBlock,
+    ToolPermissionContext,
     ToolResultBlock,
     ToolUseBlock,
 )
 
+from aviary.approvals import ApprovalBroker
 from aviary.providers.claude_code import ClaudeCodeProvider
-from aviary.schemas import CreateSessionRequest, ExecutionMode
+from aviary.schemas import ApprovalDecision, CreateSessionRequest, ExecutionMode
 
 
 class StubClaudeClient:
@@ -162,6 +165,7 @@ def test_claude_code_provider_capabilities():
     assert capabilities.supports_resume is True
     assert "model" in capabilities.session_config_fields
     assert "skills" in capabilities.session_config_fields
+    assert "policy.approval_mode" in capabilities.session_config_fields
     assert capabilities.config_schema["model"].level == "supported"
     assert capabilities.config_schema["skills"].level == "supported"
     assert capabilities.config_schema["generation"].level == "unsupported"
@@ -292,6 +296,54 @@ async def test_claude_code_provider_does_not_auto_allow_disallowed_skill_tool(tm
     assert options.disallowed_tools == ["Skill"]
 
     await provider.close("session-no-skill-tool")
+
+
+@pytest.mark.asyncio
+async def test_claude_code_provider_routes_tool_permission_to_approval_broker():
+    approval_broker = ApprovalBroker()
+    captured_options = []
+    stub_client = StubClaudeClient([])
+
+    async def fake_factory(options):
+        captured_options.append(options)
+        await stub_client.connect()
+        return stub_client
+
+    provider = ClaudeCodeProvider(client_factory=fake_factory, approval_broker=approval_broker)
+    request = CreateSessionRequest(
+        policy={
+            "approval_mode": "broker",
+            "approval_timeout_seconds": 5,
+        }
+    )
+
+    await provider.create_session("session-approval", request)
+    _ = [event async for event in provider.stream_message("session-approval", "hello")]
+
+    callback = captured_options[0].can_use_tool
+    assert callback is not None
+
+    decision_task = asyncio.create_task(
+        callback(
+            "Write",
+            {"file_path": "README.md"},
+            ToolPermissionContext(tool_use_id="tool-1", agent_id="agent-1"),
+        )
+    )
+    await asyncio.sleep(0)
+    approvals = await approval_broker.list_session_approvals("session-approval")
+    assert approvals[0].tool_name == "Write"
+    assert approvals[0].tool_input == {"file_path": "README.md"}
+    assert approvals[0].tool_use_id == "tool-1"
+
+    await approval_broker.decide(
+        session_id="session-approval",
+        approval_id=approvals[0].approval_id,
+        decision=ApprovalDecision.APPROVE,
+    )
+
+    result = await decision_task
+    assert result.behavior == "allow"
 
 
 @pytest.mark.asyncio

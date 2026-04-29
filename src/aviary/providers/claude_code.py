@@ -2,9 +2,11 @@ from collections.abc import AsyncIterator
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from aviary.approvals import ApprovalBroker
 from aviary.providers.base import AgentProvider
 from aviary.schemas import (
     AgentEvent,
+    ApprovalMode,
     CreateSessionRequest,
     ExecutionMode,
     ProviderCapabilities,
@@ -24,12 +26,14 @@ class ClaudeCodeProvider(AgentProvider):
         self,
         *,
         client_factory: ClaudeClientFactory | None = None,
+        approval_broker: ApprovalBroker | None = None,
         skill_materializer: SkillMaterializer | None = None,
     ) -> None:
         self._clients: dict[str, Any] = {}
         self._requests: dict[str, CreateSessionRequest] = {}
         self._skill_contexts: dict[str, MaterializedSkillContext] = {}
         self._client_factory = client_factory
+        self._approval_broker = approval_broker
         self._skill_materializer = skill_materializer or FilesystemSkillMaterializer()
 
     async def create_session(self, session_id: str, request: CreateSessionRequest) -> None:
@@ -155,6 +159,9 @@ class ClaudeCodeProvider(AgentProvider):
             options_kwargs["skills"] = request.skills.names
         elif provider_options.get("skills") is not None:
             options_kwargs["skills"] = provider_options["skills"]
+        can_use_tool = self._build_can_use_tool(session_id, request)
+        if can_use_tool is not None:
+            options_kwargs["can_use_tool"] = can_use_tool
 
         for key in (
             "resume",
@@ -181,6 +188,41 @@ class ClaudeCodeProvider(AgentProvider):
                 options_kwargs[key] = provider_options[key]
 
         return ClaudeAgentOptions(**options_kwargs)
+
+    def _build_can_use_tool(self, session_id: str, request: CreateSessionRequest) -> Any | None:
+        if request.policy.approval_mode == ApprovalMode.PROVIDER_NATIVE:
+            return None
+
+        if request.policy.approval_mode == ApprovalMode.AUTO_DENY:
+            async def deny_all(tool_name: str, tool_input: dict[str, Any], context: Any) -> Any:
+                from claude_agent_sdk.types import PermissionResultDeny
+
+                return PermissionResultDeny(message=f"Tool use denied by Aviary policy: {tool_name}")
+
+            return deny_all
+
+        if request.policy.approval_mode == ApprovalMode.BROKER:
+            if self._approval_broker is None:
+                raise ValueError("approval broker mode requires an ApprovalBroker")
+
+            async def brokered(tool_name: str, tool_input: dict[str, Any], context: Any) -> Any:
+                from claude_agent_sdk.types import PermissionResultAllow, PermissionResultDeny
+
+                approved = await self._approval_broker.request_approval(
+                    session_id=session_id,
+                    tool_name=tool_name,
+                    tool_input=dict(tool_input or {}),
+                    timeout_seconds=request.policy.approval_timeout_seconds,
+                    tool_use_id=getattr(context, "tool_use_id", None),
+                    agent_id=getattr(context, "agent_id", None),
+                )
+                if approved:
+                    return PermissionResultAllow()
+                return PermissionResultDeny(message=f"Tool use denied by Aviary approval broker: {tool_name}")
+
+            return brokered
+
+        raise ValueError(f"unsupported approval mode: {request.policy.approval_mode}")
 
     def _map_permission_mode(self, request: CreateSessionRequest) -> str | None:
         if request.permission_mode:
@@ -314,6 +356,8 @@ class ClaudeCodeProvider(AgentProvider):
                 "runtime.env",
                 "generation",
                 "policy.execution_mode",
+                "policy.approval_mode",
+                "policy.approval_timeout_seconds",
                 "policy.allowed_tools",
                 "policy.disallowed_tools",
                 "skills",
@@ -339,8 +383,14 @@ class ClaudeCodeProvider(AgentProvider):
                 ),
                 "policy": ProviderOptionSupport(
                     level=SupportLevel.PARTIAL,
-                    fields=["execution_mode", "allowed_tools", "disallowed_tools"],
-                    notes="execution_mode maps to Claude permission_mode. Filesystem and network policy require sandbox enforcement.",
+                    fields=[
+                        "execution_mode",
+                        "approval_mode",
+                        "approval_timeout_seconds",
+                        "allowed_tools",
+                        "disallowed_tools",
+                    ],
+                    notes="execution_mode maps to Claude permission_mode. approval_mode=broker maps to can_use_tool. Filesystem and network policy require sandbox enforcement.",
                 ),
                 "skills": ProviderOptionSupport(
                     level=SupportLevel.SUPPORTED,

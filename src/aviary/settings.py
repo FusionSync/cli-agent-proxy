@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Mapping
 
+from aviary.approvals import ApprovalBroker
 from aviary.providers.base import AgentProvider
 from aviary.providers.claude_code import ClaudeCodeProvider
 from aviary.sandbox.base import SandboxDriver
@@ -61,8 +62,8 @@ class AviarySettings:
         )
 
 
-def default_provider_registry() -> dict[str, AgentProvider]:
-    return {ClaudeCodeProvider.name: ClaudeCodeProvider()}
+def default_provider_registry(approval_broker: ApprovalBroker | None = None) -> dict[str, AgentProvider]:
+    return {ClaudeCodeProvider.name: ClaudeCodeProvider(approval_broker=approval_broker)}
 
 
 def normalize_sandbox_mode(mode: SandboxMode | str) -> SandboxMode:

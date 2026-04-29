@@ -49,6 +49,25 @@ class WorkspaceRetention(str, Enum):
     KEEP = "keep"
 
 
+class ApprovalMode(str, Enum):
+    PROVIDER_NATIVE = "provider_native"
+    BROKER = "broker"
+    AUTO_DENY = "auto_deny"
+
+
+class ApprovalDecision(str, Enum):
+    APPROVE = "approve"
+    DENY = "deny"
+
+
+class ApprovalStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
 class SkillSourceType(str, Enum):
     LOCAL_PATH = "local_path"
     S3_URI = "s3_uri"
@@ -75,6 +94,8 @@ class GenerationConfig(BaseModel):
 
 class PolicyConfig(BaseModel):
     execution_mode: ExecutionMode = Field(default=ExecutionMode.DEFAULT)
+    approval_mode: ApprovalMode = Field(default=ApprovalMode.PROVIDER_NATIVE)
+    approval_timeout_seconds: float = Field(default=300, gt=0)
     allowed_tools: list[str] = Field(default_factory=list)
     disallowed_tools: list[str] = Field(default_factory=list)
     filesystem: FilesystemPolicy = Field(default=FilesystemPolicy.WORKSPACE_ONLY)
@@ -222,6 +243,25 @@ class AgentEvent(BaseModel):
     session_id: str
     conversation_id: str
     data: dict[str, Any] = Field(default_factory=dict)
+
+
+class ApprovalResponse(BaseModel):
+    approval_id: str
+    session_id: str
+    tool_name: str
+    tool_input: dict[str, Any]
+    status: ApprovalStatus
+    reason: str | None = None
+    tool_use_id: str | None = None
+    agent_id: str | None = None
+    created_at: float
+    expires_at: float
+    decided_at: float | None = None
+
+
+class ApprovalDecisionRequest(BaseModel):
+    decision: ApprovalDecision
+    reason: str | None = Field(default=None, max_length=1000)
 
 
 class ProviderCapabilities(BaseModel):

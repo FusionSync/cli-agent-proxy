@@ -97,6 +97,8 @@ capabilities before assuming they take effect.
 ```json
 {
   "execution_mode": "approve_edits",
+  "approval_mode": "broker",
+  "approval_timeout_seconds": 300,
   "allowed_tools": ["Read", "Write"],
   "disallowed_tools": ["Bash"],
   "filesystem": "workspace_only",
@@ -108,6 +110,9 @@ capabilities before assuming they take effect.
 Fields:
 
 - `execution_mode`: one of `default`, `read_only`, `approve_edits`, `auto`, `bypass`.
+- `approval_mode`: one of `provider_native`, `broker`, `auto_deny`.
+- `approval_timeout_seconds`: max time a brokered tool permission request waits
+  before Aviary denies it.
 - `allowed_tools`: normalized or provider tool names.
 - `disallowed_tools`: normalized or provider tool names.
 - `filesystem`: one of `workspace_only`, `read_only`, `unrestricted`.
@@ -121,6 +126,24 @@ Current Docker guardrails reject `bypass`, `filesystem=unrestricted`,
 `network=unrestricted`, and `network=allowlist` without `allowed_hosts`.
 Provider-native permission modes remain defense-in-depth; they are not the
 primary security boundary.
+
+With `approval_mode=broker`, provider-native permission requests are routed to
+Aviary instead of blocking on a CLI prompt. The backend exposes pending requests
+through:
+
+```http
+GET  /v1/sessions/{session_id}/approvals
+POST /v1/sessions/{session_id}/approvals/{approval_id}:decide
+```
+
+Decision payload:
+
+```json
+{
+  "decision": "approve",
+  "reason": "User approved this file edit."
+}
+```
 
 ## SandboxConfig
 

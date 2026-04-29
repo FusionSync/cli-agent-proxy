@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi.testclient import TestClient
 
 from aviary.main import create_app
@@ -122,3 +124,33 @@ def test_close_session_removes_it():
     assert close_response.status_code == 200
     assert close_response.json()["status"] == "closed"
     assert client.get(f"/v1/sessions/{session['session_id']}").status_code == 404
+
+
+def test_approval_endpoints_list_and_decide_pending_request():
+    app = create_test_app()
+    client = TestClient(app)
+    session = client.post(
+        "/v1/sessions",
+        json={"provider": "claude-code", "conversation_id": "conv-approval"},
+    ).json()
+
+    approval = asyncio.run(
+        app.state.approval_broker.create_approval(
+            session_id=session["session_id"],
+            tool_name="Write",
+            tool_input={"file_path": "README.md"},
+            timeout_seconds=30,
+        )
+    )
+
+    list_response = client.get(f"/v1/sessions/{session['session_id']}/approvals")
+    assert list_response.status_code == 200
+    assert list_response.json()[0]["approval_id"] == approval.approval_id
+
+    decide_response = client.post(
+        f"/v1/sessions/{session['session_id']}/approvals/{approval.approval_id}:decide",
+        json={"decision": "approve", "reason": "allowed"},
+    )
+
+    assert decide_response.status_code == 200
+    assert decide_response.json()["status"] == "approved"

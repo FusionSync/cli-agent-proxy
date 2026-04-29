@@ -3,9 +3,17 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
+from aviary.approvals import ApprovalBroker
 from aviary.providers.base import AgentProvider
 from aviary.sandbox.base import SandboxDriver
-from aviary.schemas import CreateSessionRequest, ProviderCapabilities, SessionResponse, StreamMessageRequest
+from aviary.schemas import (
+    ApprovalDecisionRequest,
+    ApprovalResponse,
+    CreateSessionRequest,
+    ProviderCapabilities,
+    SessionResponse,
+    StreamMessageRequest,
+)
 from aviary.session_manager import SessionManager
 from aviary.settings import AviarySettings, build_sandbox_driver, default_provider_registry
 
@@ -16,7 +24,8 @@ def create_app(
     settings: AviarySettings | None = None,
 ) -> FastAPI:
     app_settings = settings or AviarySettings.from_env()
-    provider_registry = providers or default_provider_registry()
+    approval_broker = ApprovalBroker()
+    provider_registry = providers or default_provider_registry(approval_broker=approval_broker)
     driver = sandbox_driver or build_sandbox_driver(app_settings, providers=provider_registry)
     manager = SessionManager(sandbox_driver=driver)
 
@@ -24,6 +33,7 @@ def create_app(
     app.state.session_manager = manager
     app.state.sandbox_driver = driver
     app.state.settings = app_settings
+    app.state.approval_broker = approval_broker
 
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
@@ -76,10 +86,38 @@ def create_app(
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="session not found") from exc
 
+    @app.get("/v1/sessions/{session_id}/approvals", response_model=list[ApprovalResponse])
+    async def list_session_approvals(session_id: str) -> list[ApprovalResponse]:
+        session = await manager.get_session(session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="session not found")
+        return await approval_broker.list_session_approvals(session_id)
+
+    @app.post(
+        "/v1/sessions/{session_id}/approvals/{approval_id}:decide",
+        response_model=ApprovalResponse,
+    )
+    async def decide_session_approval(
+        session_id: str,
+        approval_id: str,
+        request: ApprovalDecisionRequest,
+    ) -> ApprovalResponse:
+        try:
+            return await approval_broker.decide(
+                session_id=session_id,
+                approval_id=approval_id,
+                decision=request.decision,
+                reason=request.reason,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="approval not found") from exc
+
     @app.delete("/v1/sessions/{session_id}", response_model=SessionResponse)
     async def close_session(session_id: str) -> SessionResponse:
         try:
-            return await manager.close(session_id)
+            response = await manager.close(session_id)
+            await approval_broker.cancel_session(session_id)
+            return response
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="session not found") from exc
 

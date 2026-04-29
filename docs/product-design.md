@@ -260,13 +260,14 @@ POST   /v1/sessions
 GET    /v1/sessions/{session_id}
 POST   /v1/sessions/{session_id}/messages:stream
 POST   /v1/sessions/{session_id}/interrupt
+GET    /v1/sessions/{session_id}/approvals
+POST   /v1/sessions/{session_id}/approvals/{approval_id}:decide
 DELETE /v1/sessions/{session_id}
 ```
 
 Planned API surface:
 
 ```http
-POST   /v1/sessions/{session_id}/approvals/{approval_id}
 GET    /v1/sessions/{session_id}/events
 GET    /v1/sessions/{session_id}/workspace
 ```
@@ -294,6 +295,8 @@ Create session example:
   },
   "policy": {
     "execution_mode": "approve_edits",
+    "approval_mode": "broker",
+    "approval_timeout_seconds": 300,
     "filesystem": "workspace_only",
     "network": "deny_by_default",
     "allowed_hosts": ["model-gateway.internal"],
@@ -353,6 +356,8 @@ Production minimums:
 - Sessions have idle and hard timeouts.
 - Containers have CPU, memory, pids, disk, and output limits.
 - Dangerous actions flow through approvals.
+- CLI-agent permission prompts are brokered through Aviary APIs, not through
+  interactive TTY prompts inside the provider container.
 - Every run emits auditable events.
 - Provider-native skills are loaded through Aviary-managed skill sources, not
   arbitrary user or container settings.

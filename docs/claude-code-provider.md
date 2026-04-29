@@ -55,6 +55,7 @@ Claude Code currently maps:
 - `runtime.cwd` -> `ClaudeAgentOptions.cwd`
 - `runtime.env` -> `ClaudeAgentOptions.env`
 - `policy.execution_mode` -> `ClaudeAgentOptions.permission_mode`
+- `policy.approval_mode=broker` -> `ClaudeAgentOptions.can_use_tool`
 - `policy.allowed_tools` -> `ClaudeAgentOptions.allowed_tools`
 - `policy.disallowed_tools` -> `ClaudeAgentOptions.disallowed_tools`
 - `skills.names` -> `ClaudeAgentOptions.skills`
@@ -125,6 +126,44 @@ When skills are enabled, Aviary adds the Claude Code `Skill` tool to
 `provider_options.setting_sources` and raw Claude settings should be avoided in
 managed deployments because they can load unrelated container/user
 configuration.
+
+## Permission Broker
+
+Claude Code can request tool permission through the Agent SDK `can_use_tool`
+callback. In backend mode, Aviary should own that interaction instead of
+letting Claude Code block on an interactive terminal prompt.
+
+Enable brokered permissions with:
+
+```json
+{
+  "policy": {
+    "approval_mode": "broker",
+    "approval_timeout_seconds": 300
+  }
+}
+```
+
+When Claude Code asks to use a tool, Aviary creates an approval request. Clients
+can poll and decide through:
+
+```http
+GET  /v1/sessions/{session_id}/approvals
+POST /v1/sessions/{session_id}/approvals/{approval_id}:decide
+```
+
+Decision payload:
+
+```json
+{
+  "decision": "deny",
+  "reason": "Bash command is outside this product policy."
+}
+```
+
+If the approval times out, Aviary denies the tool call. `approval_mode=auto_deny`
+installs a callback that denies every provider permission request without
+waiting for user input.
 
 Backward-compatible flat fields still accepted during early development:
 
