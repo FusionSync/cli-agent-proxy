@@ -47,32 +47,32 @@ Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provid
 
 ## 为什么需要 Aviary？
 
-| | 如果你正在构建... | Aviary 提供... |
+| 信号 | 如果你正在构建... | Aviary 提供... |
 | --- | --- | --- |
-| [API] | Coding Agent SaaS 后端 | Session、stream、interrupt、close、policy、provider routing API |
-| [私有化] | 私有化 Agent 平台 | 自托管运行时控制和私有模型网关接入 |
-| [Provider] | 多 Provider 智能体产品 | 通过 capabilities 暴露 Provider 支持程度，而不是硬编码假设 |
-| [隔离] | 安全工作区运行环境 | 以每个会话为单位的工作区和凭证边界 |
-| [事件] | 可观测 Agent UI | 标准化 SSE 事件，用于 UI 流式渲染、审计、回放和审批 |
+| <img src="docs/assets/tag-api.svg" alt="API" width="82"> | Coding Agent SaaS 后端 | Session、stream、interrupt、close、policy、provider routing API |
+| <img src="docs/assets/tag-private.svg" alt="私有化" width="108"> | 私有化 Agent 平台 | 自托管运行时控制和私有模型网关接入 |
+| <img src="docs/assets/tag-providers.svg" alt="Provider" width="124"> | 多 Provider 智能体产品 | 通过 capabilities 暴露 Provider 支持程度，而不是硬编码假设 |
+| <img src="docs/assets/tag-isolation.svg" alt="隔离" width="116"> | 安全工作区运行环境 | 以每个会话为单位的工作区和凭证边界 |
+| <img src="docs/assets/tag-events.svg" alt="事件" width="96"> | 可观测 Agent UI | 标准化 SSE 事件，用于 UI 流式渲染、审计、回放和审批 |
 
 ## 当前状态
 
 Aviary 还处于早期。核心运行时边界已经建立，但生产级 Docker/Kubernetes 沙箱 driver 仍在规划中。
 
-| | 模块 | 状态 |
+| 阶段 | 模块 | 状态 |
 | --- | --- | --- |
-| [完成] | FastAPI HTTP/SSE 服务 | 已实现 |
-| [完成] | Claude Code Provider，基于 `claude-agent-sdk` | 已实现 |
-| [完成] | 会话创建、查询、删除 | 已实现 |
-| [完成] | SSE 消息流 | 已实现 |
-| [完成] | Provider capabilities endpoint | 已实现 |
-| [完成] | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
-| [完成] | `SandboxDriver` 运行时边界 | 已实现 |
-| [开发] | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
-| [下一步] | 每个 session 一个 Docker container | 规划中 |
-| [下一步] | Kubernetes pod/job driver | 规划中 |
-| [下一步] | session/run/event/approval/audit 持久化 | 规划中 |
-| [下一步] | Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | FastAPI HTTP/SSE 服务 | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Claude Code Provider，基于 `claude-agent-sdk` | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | 会话创建、查询、删除 | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | SSE 消息流 | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Provider capabilities endpoint | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | `SandboxDriver` 运行时边界 | 已实现 |
+| <img src="docs/assets/status-dev.svg" alt="开发中" width="82"> | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | 每个 session 一个 Docker container | 规划中 |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Kubernetes pod/job driver | 规划中 |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | session/run/event/approval/audit 持久化 | 规划中 |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |
 
 ## 本地开发
 
@@ -250,23 +250,23 @@ control plane deployment
 
 ## 路线图
 
-| | Milestone | Focus |
+| 阶段 | Milestone | Focus |
 | --- | --- | --- |
-| [当前] | `v0.1` | Claude Code proof of concept、local unsafe sandbox driver、SSE stream、memory storage |
-| [下一步] | `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
-| [下一步] | `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
-| [后续] | `v0.4` | approval API、network/filesystem enforcement、Docker Compose |
-| [后续] | `v0.5` | Codex provider、provider conformance tests |
-| [后续] | `v1.0` | stable OpenAPI、SDK examples、Helm chart、production hardening guide |
+| <img src="docs/assets/status-now.svg" alt="当前" width="82"> | `v0.1` | Claude Code proof of concept、local unsafe sandbox driver、SSE stream、memory storage |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
+| <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.4` | approval API、network/filesystem enforcement、Docker Compose |
+| <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.5` | Codex provider、provider conformance tests |
+| <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v1.0` | stable OpenAPI、SDK examples、Helm chart、production hardening guide |
 
 ## 文档
 
-| | Document | Purpose |
+| 类型 | Document | Purpose |
 | --- | --- | --- |
-| [设计] | [Product Design](docs/product-design.md) | 产品边界、原则、路线图 |
-| [Runtime] | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime 生命周期、Driver、隔离模型 |
-| [API] | [API Schema](docs/api-schema.md) | DTO 分组和 Provider capability 模型 |
-| [Provider] | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK 映射和事件标准化 |
+| <img src="docs/assets/tag-design.svg" alt="设计" width="102"> | [Product Design](docs/product-design.md) | 产品边界、原则、路线图 |
+| <img src="docs/assets/tag-runtime.svg" alt="Runtime" width="112"> | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime 生命周期、Driver、隔离模型 |
+| <img src="docs/assets/tag-api.svg" alt="API" width="82"> | [API Schema](docs/api-schema.md) | DTO 分组和 Provider capability 模型 |
+| <img src="docs/assets/tag-providers.svg" alt="Provider" width="124"> | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK 映射和事件标准化 |
 
 ## 参与贡献
 

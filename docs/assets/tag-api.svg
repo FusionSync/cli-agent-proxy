@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="82" height="24" viewBox="0 0 82 24" role="img" aria-label="API">
+  <rect width="82" height="24" rx="12" fill="#ecfeff"/>
+  <rect x=".5" y=".5" width="81" height="23" rx="11.5" fill="none" stroke="#67e8f9"/>
+  <path d="M10 9l-3 3 3 3M18 9l3 3-3 3M13 16l2-8" fill="none" stroke="#0891b2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="32" y="16" fill="#155e75" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".7">API</text>
+</svg>

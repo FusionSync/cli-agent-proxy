@@ -51,33 +51,33 @@ one backend API without forcing your product to integrate each CLI directly.
 
 ## Why Aviary?
 
-| | If you are building... | Aviary gives you... |
+| Signal | If you are building... | Aviary gives you... |
 | --- | --- | --- |
-| [API] | A coding-agent SaaS backend | Session, stream, interrupt, close, policy, and provider routing APIs |
-| [Private] | A private agent platform | Self-hosted runtime control with private model gateway support |
-| [Providers] | A multi-provider agent product | Capability discovery instead of hardcoded provider assumptions |
-| [Isolation] | A secure workspace runtime | Per-session workspace and credential boundaries as the product direction |
-| [Events] | An observable agent UI | Normalized SSE events for UI streaming, audit, replay, and approvals |
+| <img src="docs/assets/tag-api.svg" alt="API" width="82"> | A coding-agent SaaS backend | Session, stream, interrupt, close, policy, and provider routing APIs |
+| <img src="docs/assets/tag-private.svg" alt="Private" width="108"> | A private agent platform | Self-hosted runtime control with private model gateway support |
+| <img src="docs/assets/tag-providers.svg" alt="Providers" width="124"> | A multi-provider agent product | Capability discovery instead of hardcoded provider assumptions |
+| <img src="docs/assets/tag-isolation.svg" alt="Isolation" width="116"> | A secure workspace runtime | Per-session workspace and credential boundaries as the product direction |
+| <img src="docs/assets/tag-events.svg" alt="Events" width="96"> | An observable agent UI | Normalized SSE events for UI streaming, audit, replay, and approvals |
 
 ## Current Status
 
 Aviary is early. The core boundary is in place, but production sandbox drivers
 are still planned.
 
-| | Area | Status |
+| Stage | Area | Status |
 | --- | --- | --- |
-| [Done] | FastAPI HTTP/SSE service | Implemented |
-| [Done] | Claude Code provider via `claude-agent-sdk` | Implemented |
-| [Done] | Session create/get/delete | Implemented |
-| [Done] | Message streaming over SSE | Implemented |
-| [Done] | Provider capabilities endpoint | Implemented |
-| [Done] | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
-| [Done] | `SandboxDriver` runtime boundary | Implemented |
-| [Dev] | `LocalUnsafeSandboxDriver` | Implemented, development only |
-| [Next] | Docker one-container-per-session driver | Planned |
-| [Next] | Kubernetes pod/job driver | Planned |
-| [Next] | Persistent sessions, runs, events, approvals, audit | Planned |
-| [Next] | Codex, Gemini CLI, OpenCode, ACP providers | Planned |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | FastAPI HTTP/SSE service | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Claude Code provider via `claude-agent-sdk` | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Session create/get/delete | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Message streaming over SSE | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Provider capabilities endpoint | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | `SandboxDriver` runtime boundary | Implemented |
+| <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `LocalUnsafeSandboxDriver` | Implemented, development only |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Docker one-container-per-session driver | Planned |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Kubernetes pod/job driver | Planned |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Persistent sessions, runs, events, approvals, audit | Planned |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Codex, Gemini CLI, OpenCode, ACP providers | Planned |
 
 ## Local Development
 
@@ -267,23 +267,23 @@ control plane deployment
 
 ## Roadmap
 
-| | Milestone | Focus |
+| Phase | Milestone | Focus |
 | --- | --- | --- |
-| [Now] | `v0.1` | Claude Code proof of concept, local unsafe sandbox driver, SSE stream, memory storage |
-| [Next] | `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
-| [Next] | `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
-| [Later] | `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |
-| [Later] | `v0.5` | Codex provider and provider conformance tests |
-| [Later] | `v1.0` | Stable OpenAPI, SDK examples, Helm chart, production hardening guide |
+| <img src="docs/assets/status-now.svg" alt="Now" width="82"> | `v0.1` | Claude Code proof of concept, local unsafe sandbox driver, SSE stream, memory storage |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
+| <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |
+| <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.5` | Codex provider and provider conformance tests |
+| <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v1.0` | Stable OpenAPI, SDK examples, Helm chart, production hardening guide |
 
 ## Documentation
 
-| | Document | Purpose |
+| Type | Document | Purpose |
 | --- | --- | --- |
-| [Design] | [Product Design](docs/product-design.md) | Product boundaries, principles, roadmap |
-| [Runtime] | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime lifecycle, drivers, isolation model |
-| [API] | [API Schema](docs/api-schema.md) | DTO groups and provider capability model |
-| [Provider] | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK mapping and event normalization |
+| <img src="docs/assets/tag-design.svg" alt="Design" width="102"> | [Product Design](docs/product-design.md) | Product boundaries, principles, roadmap |
+| <img src="docs/assets/tag-runtime.svg" alt="Runtime" width="112"> | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime lifecycle, drivers, isolation model |
+| <img src="docs/assets/tag-api.svg" alt="API" width="82"> | [API Schema](docs/api-schema.md) | DTO groups and provider capability model |
+| <img src="docs/assets/tag-providers.svg" alt="Provider" width="124"> | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK mapping and event normalization |
 
 ## Contributing
 
