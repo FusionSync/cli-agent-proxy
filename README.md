@@ -12,7 +12,7 @@
 <p align="center">
   <a href="README.zh-CN.md">Read in Simplified Chinese</a>
   |
-  <a href="#quick-start">Quick Start</a>
+  <a href="#local-development">Local Development</a>
   |
   <a href="#architecture">Architecture</a>
   |
@@ -51,85 +51,44 @@ one backend API without forcing your product to integrate each CLI directly.
 
 ## Why Aviary?
 
-| If you are building... | Aviary gives you... |
-| --- | --- |
-| A coding-agent SaaS backend | Session, stream, interrupt, close, policy, and provider routing APIs |
-| A private agent platform | Self-hosted runtime control with private model gateway support |
-| A multi-provider agent product | Capability discovery instead of hardcoded provider assumptions |
-| A secure workspace runtime | Per-session workspace and credential boundaries as the product direction |
-| An observable agent UI | Normalized SSE events for UI streaming, audit, replay, and approvals |
+| | If you are building... | Aviary gives you... |
+| --- | --- | --- |
+| [API] | A coding-agent SaaS backend | Session, stream, interrupt, close, policy, and provider routing APIs |
+| [Private] | A private agent platform | Self-hosted runtime control with private model gateway support |
+| [Providers] | A multi-provider agent product | Capability discovery instead of hardcoded provider assumptions |
+| [Isolation] | A secure workspace runtime | Per-session workspace and credential boundaries as the product direction |
+| [Events] | An observable agent UI | Normalized SSE events for UI streaming, audit, replay, and approvals |
 
 ## Current Status
 
 Aviary is early. The core boundary is in place, but production sandbox drivers
 are still planned.
 
-| Area | Status |
-| --- | --- |
-| FastAPI HTTP/SSE service | Implemented |
-| Claude Code provider via `claude-agent-sdk` | Implemented |
-| Session create/get/delete | Implemented |
-| Message streaming over SSE | Implemented |
-| Provider capabilities endpoint | Implemented |
-| DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
-| `SandboxDriver` runtime boundary | Implemented |
-| `LocalUnsafeSandboxDriver` | Implemented, development only |
-| Docker one-container-per-session driver | Planned |
-| Kubernetes pod/job driver | Planned |
-| Persistent sessions, runs, events, approvals, audit | Planned |
-| Codex, Gemini CLI, OpenCode, ACP providers | Planned |
+| | Area | Status |
+| --- | --- | --- |
+| [Done] | FastAPI HTTP/SSE service | Implemented |
+| [Done] | Claude Code provider via `claude-agent-sdk` | Implemented |
+| [Done] | Session create/get/delete | Implemented |
+| [Done] | Message streaming over SSE | Implemented |
+| [Done] | Provider capabilities endpoint | Implemented |
+| [Done] | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
+| [Done] | `SandboxDriver` runtime boundary | Implemented |
+| [Dev] | `LocalUnsafeSandboxDriver` | Implemented, development only |
+| [Next] | Docker one-container-per-session driver | Planned |
+| [Next] | Kubernetes pod/job driver | Planned |
+| [Next] | Persistent sessions, runs, events, approvals, audit | Planned |
+| [Next] | Codex, Gemini CLI, OpenCode, ACP providers | Planned |
 
-## Quick Start
+## Local Development
 
-Install dependencies:
+The README is not the API manual. For the full request schema, use
+[docs/api-schema.md](docs/api-schema.md). For the Claude Code provider mapping,
+use [docs/claude-code-provider.md](docs/claude-code-provider.md).
 
 ```bash
 uv sync --extra dev
-```
-
-Run tests:
-
-```bash
 uv run pytest
-```
-
-Start the API:
-
-```bash
 uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
-```
-
-Create a Claude Code session:
-
-```bash
-curl -s http://localhost:9000/v1/sessions \
-  -H 'content-type: application/json' \
-  -d '{
-    "provider": "claude-code",
-    "conversation_id": "demo-conv",
-    "model": {"name": "private-sonnet"},
-    "runtime": {
-      "base_url": "http://model-gateway.internal",
-      "api_key_ref": "project-a/anthropic"
-    },
-    "sandbox": {
-      "profile": "default",
-      "timeout_seconds": 1800
-    },
-    "policy": {
-      "execution_mode": "approve_edits",
-      "filesystem": "workspace_only",
-      "network": "deny_by_default"
-    }
-  }'
-```
-
-Stream a message:
-
-```bash
-curl -N -X POST http://localhost:9000/v1/sessions/<session_id>/messages:stream \
-  -H 'content-type: application/json' \
-  -d '{"message":"Inspect this repository and summarize the runtime architecture."}'
 ```
 
 ## Architecture
@@ -308,23 +267,23 @@ control plane deployment
 
 ## Roadmap
 
-| Milestone | Focus |
-| --- | --- |
-| `v0.1` | Claude Code proof of concept, local unsafe sandbox driver, SSE stream, memory storage |
-| `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
-| `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
-| `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |
-| `v0.5` | Codex provider and provider conformance tests |
-| `v1.0` | Stable OpenAPI, SDK examples, Helm chart, production hardening guide |
+| | Milestone | Focus |
+| --- | --- | --- |
+| [Now] | `v0.1` | Claude Code proof of concept, local unsafe sandbox driver, SSE stream, memory storage |
+| [Next] | `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
+| [Next] | `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
+| [Later] | `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |
+| [Later] | `v0.5` | Codex provider and provider conformance tests |
+| [Later] | `v1.0` | Stable OpenAPI, SDK examples, Helm chart, production hardening guide |
 
 ## Documentation
 
-| Document | Purpose |
-| --- | --- |
-| [Product Design](docs/product-design.md) | Product boundaries, principles, roadmap |
-| [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime lifecycle, drivers, isolation model |
-| [API Schema](docs/api-schema.md) | DTO groups and provider capability model |
-| [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK mapping and event normalization |
+| | Document | Purpose |
+| --- | --- | --- |
+| [Design] | [Product Design](docs/product-design.md) | Product boundaries, principles, roadmap |
+| [Runtime] | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime lifecycle, drivers, isolation model |
+| [API] | [API Schema](docs/api-schema.md) | DTO groups and provider capability model |
+| [Provider] | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK mapping and event normalization |
 
 ## Contributing
 

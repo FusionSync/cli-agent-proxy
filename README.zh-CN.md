@@ -12,7 +12,7 @@
 <p align="center">
   <a href="README.md">English README</a>
   ·
-  <a href="#快速开始">快速开始</a>
+  <a href="#本地开发">本地开发</a>
   ·
   <a href="#架构">架构</a>
   ·
@@ -47,84 +47,41 @@ Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provid
 
 ## 为什么需要 Aviary？
 
-| 如果你正在构建... | Aviary 提供... |
-| --- | --- |
-| Coding Agent SaaS 后端 | Session、stream、interrupt、close、policy、provider routing API |
-| 私有化 Agent 平台 | 自托管运行时控制和私有模型网关接入 |
-| 多 Provider 智能体产品 | 通过 capabilities 暴露 Provider 支持程度，而不是硬编码假设 |
-| 安全工作区运行环境 | 以每个会话为单位的工作区和凭证边界 |
-| 可观测 Agent UI | 标准化 SSE 事件，用于 UI 流式渲染、审计、回放和审批 |
+| | 如果你正在构建... | Aviary 提供... |
+| --- | --- | --- |
+| [API] | Coding Agent SaaS 后端 | Session、stream、interrupt、close、policy、provider routing API |
+| [私有化] | 私有化 Agent 平台 | 自托管运行时控制和私有模型网关接入 |
+| [Provider] | 多 Provider 智能体产品 | 通过 capabilities 暴露 Provider 支持程度，而不是硬编码假设 |
+| [隔离] | 安全工作区运行环境 | 以每个会话为单位的工作区和凭证边界 |
+| [事件] | 可观测 Agent UI | 标准化 SSE 事件，用于 UI 流式渲染、审计、回放和审批 |
 
 ## 当前状态
 
 Aviary 还处于早期。核心运行时边界已经建立，但生产级 Docker/Kubernetes 沙箱 driver 仍在规划中。
 
-| 模块 | 状态 |
-| --- | --- |
-| FastAPI HTTP/SSE 服务 | 已实现 |
-| Claude Code Provider，基于 `claude-agent-sdk` | 已实现 |
-| 会话创建、查询、删除 | 已实现 |
-| SSE 消息流 | 已实现 |
-| Provider capabilities endpoint | 已实现 |
-| model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
-| `SandboxDriver` 运行时边界 | 已实现 |
-| `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
-| 每个 session 一个 Docker container | 规划中 |
-| Kubernetes pod/job driver | 规划中 |
-| session/run/event/approval/audit 持久化 | 规划中 |
-| Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |
+| | 模块 | 状态 |
+| --- | --- | --- |
+| [完成] | FastAPI HTTP/SSE 服务 | 已实现 |
+| [完成] | Claude Code Provider，基于 `claude-agent-sdk` | 已实现 |
+| [完成] | 会话创建、查询、删除 | 已实现 |
+| [完成] | SSE 消息流 | 已实现 |
+| [完成] | Provider capabilities endpoint | 已实现 |
+| [完成] | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
+| [完成] | `SandboxDriver` 运行时边界 | 已实现 |
+| [开发] | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
+| [下一步] | 每个 session 一个 Docker container | 规划中 |
+| [下一步] | Kubernetes pod/job driver | 规划中 |
+| [下一步] | session/run/event/approval/audit 持久化 | 规划中 |
+| [下一步] | Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |
 
-## 快速开始
+## 本地开发
 
-安装依赖：
+README 不是完整 API 手册。完整请求结构见 [docs/api-schema.md](docs/api-schema.md)，Claude Code Provider 映射见 [docs/claude-code-provider.md](docs/claude-code-provider.md)。
 
 ```bash
 uv sync --extra dev
-```
-
-运行测试：
-
-```bash
 uv run pytest
-```
-
-启动 API：
-
-```bash
 uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
-```
-
-创建 Claude Code 会话：
-
-```bash
-curl -s http://localhost:9000/v1/sessions \
-  -H 'content-type: application/json' \
-  -d '{
-    "provider": "claude-code",
-    "conversation_id": "demo-conv",
-    "model": {"name": "private-sonnet"},
-    "runtime": {
-      "base_url": "http://model-gateway.internal",
-      "api_key_ref": "project-a/anthropic"
-    },
-    "sandbox": {
-      "profile": "default",
-      "timeout_seconds": 1800
-    },
-    "policy": {
-      "execution_mode": "approve_edits",
-      "filesystem": "workspace_only",
-      "network": "deny_by_default"
-    }
-  }'
-```
-
-发送流式消息：
-
-```bash
-curl -N -X POST http://localhost:9000/v1/sessions/<session_id>/messages:stream \
-  -H 'content-type: application/json' \
-  -d '{"message":"Inspect this repository and summarize the runtime architecture."}'
 ```
 
 ## 架构
@@ -293,23 +250,23 @@ control plane deployment
 
 ## 路线图
 
-| Milestone | Focus |
-| --- | --- |
-| `v0.1` | Claude Code proof of concept、local unsafe sandbox driver、SSE stream、memory storage |
-| `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
-| `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
-| `v0.4` | approval API、network/filesystem enforcement、Docker Compose |
-| `v0.5` | Codex provider、provider conformance tests |
-| `v1.0` | stable OpenAPI、SDK examples、Helm chart、production hardening guide |
+| | Milestone | Focus |
+| --- | --- | --- |
+| [当前] | `v0.1` | Claude Code proof of concept、local unsafe sandbox driver、SSE stream、memory storage |
+| [下一步] | `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
+| [下一步] | `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
+| [后续] | `v0.4` | approval API、network/filesystem enforcement、Docker Compose |
+| [后续] | `v0.5` | Codex provider、provider conformance tests |
+| [后续] | `v1.0` | stable OpenAPI、SDK examples、Helm chart、production hardening guide |
 
 ## 文档
 
-| Document | Purpose |
-| --- | --- |
-| [Product Design](docs/product-design.md) | 产品边界、原则、路线图 |
-| [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime 生命周期、Driver、隔离模型 |
-| [API Schema](docs/api-schema.md) | DTO 分组和 Provider capability 模型 |
-| [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK 映射和事件标准化 |
+| | Document | Purpose |
+| --- | --- | --- |
+| [设计] | [Product Design](docs/product-design.md) | 产品边界、原则、路线图 |
+| [Runtime] | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime 生命周期、Driver、隔离模型 |
+| [API] | [API Schema](docs/api-schema.md) | DTO 分组和 Provider capability 模型 |
+| [Provider] | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK 映射和事件标准化 |
 
 ## 参与贡献
 
