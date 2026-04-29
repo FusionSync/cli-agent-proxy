@@ -300,6 +300,15 @@ Create session example:
     "allowed_tools": ["Read", "Write"],
     "disallowed_tools": ["Bash"]
   },
+  "skills": {
+    "names": ["reviewer"],
+    "sources": [
+      {
+        "type": "local_path",
+        "path": "/mnt/aviary-skills/team-a"
+      }
+    ]
+  },
   "provider_options": {
     "resume": "previous-provider-session-id",
     "max_turns": 5
@@ -345,6 +354,8 @@ Production minimums:
 - Containers have CPU, memory, pids, disk, and output limits.
 - Dangerous actions flow through approvals.
 - Every run emits auditable events.
+- Provider-native skills are loaded through Aviary-managed skill sources, not
+  arbitrary user or container settings.
 
 Docker socket access is high risk. If used, it belongs only in an internal
 Sandbox Manager process, never in the public API process.
@@ -366,6 +377,13 @@ daemon. Aviary provides the HTTP/SSE service and uses the SDK inside a
 runtime process.
 
 Details are documented in [claude-code-provider.md](claude-code-provider.md).
+
+Claude Code Skills are filesystem artifacts under `.claude/skills`. Aviary's
+`skills.sources` DTO lets callers reference mounted local paths or S3 prefixes;
+the provider materializes them into a temporary project directory and exposes
+that directory to the SDK through `add_dirs`. This keeps skill injection
+explicit and avoids relying on the service container's user-level Claude
+configuration.
 
 ## 12. Relationship To Existing Tools
 

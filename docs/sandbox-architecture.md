@@ -111,6 +111,12 @@ session boundary. In `embedded` mode, the outer boundary is the Aviary service
 container itself. In `managed-container` mode, the outer boundary is the
 per-session runtime container, and Claude Code controls run inside it.
 
+Skill injection follows the same rule. Callers provide `skills.sources`; Aviary
+materializes those sources into a temporary `.claude/skills` project directory
+and passes that directory to the provider runtime. The provider should not load
+ambient user-level `~/.claude` skills unless a trusted server-side profile
+explicitly enables that behavior.
+
 ## 5. Docker Driver Target
 
 The Docker path is split into two layers.

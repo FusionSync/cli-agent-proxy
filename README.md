@@ -72,7 +72,7 @@ but the runtime image and full production deployment wiring are still planned.
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Session create/get/delete | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Message streaming over SSE | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Provider capabilities endpoint | Implemented |
-| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/skills/provider options | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | `SandboxDriver` runtime boundary | Implemented |
 | <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `EmbeddedSandboxDriver` | Implemented for local and trusted single-tenant deployments |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Docker runtime spec, JSONL protocol, CLI worker/adapter | Implemented |
@@ -195,6 +195,15 @@ POST /v1/sessions
     "disallowed_tools": ["Bash"],
     "filesystem": "workspace_only",
     "network": "deny_by_default"
+  },
+  "skills": {
+    "names": ["reviewer"],
+    "sources": [
+      {
+        "type": "local_path",
+        "path": "/mnt/aviary-skills/team-a"
+      }
+    ]
   },
   "provider_options": {
     "resume": "previous-claude-session-id",

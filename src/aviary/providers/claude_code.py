@@ -12,6 +12,7 @@ from aviary.schemas import (
     ProviderOptionSupport,
     SupportLevel,
 )
+from aviary.skill_sources import FilesystemSkillMaterializer, MaterializedSkillContext, SkillMaterializer
 
 ClaudeClientFactory = Callable[[Any], Awaitable[Any]]
 
@@ -19,10 +20,17 @@ ClaudeClientFactory = Callable[[Any], Awaitable[Any]]
 class ClaudeCodeProvider(AgentProvider):
     name = ProviderName.CLAUDE_CODE.value
 
-    def __init__(self, *, client_factory: ClaudeClientFactory | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        client_factory: ClaudeClientFactory | None = None,
+        skill_materializer: SkillMaterializer | None = None,
+    ) -> None:
         self._clients: dict[str, Any] = {}
         self._requests: dict[str, CreateSessionRequest] = {}
+        self._skill_contexts: dict[str, MaterializedSkillContext] = {}
         self._client_factory = client_factory
+        self._skill_materializer = skill_materializer or FilesystemSkillMaterializer()
 
     async def create_session(self, session_id: str, request: CreateSessionRequest) -> None:
         self._requests[session_id] = request
@@ -60,6 +68,9 @@ class ClaudeCodeProvider(AgentProvider):
     async def close(self, session_id: str) -> None:
         client = self._clients.pop(session_id, None)
         self._requests.pop(session_id, None)
+        skill_context = self._skill_contexts.pop(session_id, None)
+        if skill_context is not None:
+            skill_context.cleanup()
         if client and hasattr(client, "disconnect"):
             await client.disconnect()
 
@@ -110,13 +121,40 @@ class ClaudeCodeProvider(AgentProvider):
         if permission_mode:
             options_kwargs["permission_mode"] = permission_mode
         allowed_tools = request.policy.allowed_tools or request.allowed_tools
+        disallowed_tools = request.policy.disallowed_tools or request.disallowed_tools
+        if (
+            request.skills.is_enabled()
+            and request.skills.auto_allow_skill_tool
+            and "Skill" not in allowed_tools
+            and "Skill" not in disallowed_tools
+        ):
+            allowed_tools = [*allowed_tools, "Skill"]
         if allowed_tools:
             options_kwargs["allowed_tools"] = allowed_tools
-        disallowed_tools = request.policy.disallowed_tools or request.disallowed_tools
         if disallowed_tools:
             options_kwargs["disallowed_tools"] = disallowed_tools
         if env:
             options_kwargs["env"] = env
+
+        skill_context = self._skill_materializer.materialize(session_id, request.skills)
+        if skill_context is not None:
+            self._skill_contexts = {**self._skill_contexts, session_id: skill_context}
+            options_kwargs["add_dirs"] = [
+                *list(provider_options.get("add_dirs") or []),
+                *skill_context.add_dirs,
+            ]
+            setting_sources = list(provider_options.get("setting_sources") or [])
+            if "project" not in setting_sources:
+                setting_sources.append("project")
+            options_kwargs["setting_sources"] = setting_sources
+        elif provider_options.get("add_dirs") is not None:
+            options_kwargs["add_dirs"] = provider_options["add_dirs"]
+        if skill_context is None and provider_options.get("setting_sources") is not None:
+            options_kwargs["setting_sources"] = provider_options["setting_sources"]
+        if request.skills.names is not None:
+            options_kwargs["skills"] = request.skills.names
+        elif provider_options.get("skills") is not None:
+            options_kwargs["skills"] = provider_options["skills"]
 
         for key in (
             "resume",
@@ -127,15 +165,12 @@ class ClaudeCodeProvider(AgentProvider):
             "mcp_servers",
             "cli_path",
             "settings",
-            "add_dirs",
             "extra_args",
             "max_buffer_size",
             "permission_prompt_tool_name",
             "user",
             "include_partial_messages",
             "fork_session",
-            "setting_sources",
-            "skills",
             "max_thinking_tokens",
             "effort",
             "output_format",
@@ -281,6 +316,9 @@ class ClaudeCodeProvider(AgentProvider):
                 "policy.execution_mode",
                 "policy.allowed_tools",
                 "policy.disallowed_tools",
+                "skills",
+                "skills.names",
+                "skills.sources",
                 "provider_options",
                 "system_prompt",
             ],
@@ -304,6 +342,11 @@ class ClaudeCodeProvider(AgentProvider):
                     fields=["execution_mode", "allowed_tools", "disallowed_tools"],
                     notes="execution_mode maps to Claude permission_mode. Filesystem and network policy require sandbox enforcement.",
                 ),
+                "skills": ProviderOptionSupport(
+                    level=SupportLevel.SUPPORTED,
+                    fields=["names", "sources", "auto_allow_skill_tool"],
+                    notes="Local skill sources are materialized into a Claude-discoverable .claude/skills directory. S3 sources require the optional skill-s3 dependency or an externally mounted local path.",
+                ),
                 "provider_options": ProviderOptionSupport(
                     level=SupportLevel.PROVIDER_SPECIFIC,
                     fields=[
@@ -314,15 +357,12 @@ class ClaudeCodeProvider(AgentProvider):
                         "mcp_servers",
                         "cli_path",
                         "settings",
-                        "add_dirs",
                         "extra_args",
                         "max_buffer_size",
                         "permission_prompt_tool_name",
                         "user",
                         "include_partial_messages",
                         "fork_session",
-                        "setting_sources",
-                        "skills",
                         "max_thinking_tokens",
                         "effort",
                         "output_format",

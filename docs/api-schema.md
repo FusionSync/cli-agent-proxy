@@ -17,6 +17,7 @@ provider-specific options:
   "generation": {},
   "policy": {},
   "sandbox": {},
+  "skills": {},
   "provider_options": {},
   "metadata": {}
 }
@@ -145,6 +146,49 @@ server-side.
 `profile` is resolved by the server into a sandbox profile. For Docker this
 maps to image, non-root user, resource limits, read-only rootfs, dropped
 capabilities, and network policy defaults.
+
+## SkillConfig
+
+```json
+{
+  "names": ["reviewer"],
+  "sources": [
+    {
+      "type": "local_path",
+      "path": "/mnt/aviary-skills/team-a"
+    },
+    {
+      "type": "s3_uri",
+      "uri": "s3://company-agent-skills/claude"
+    }
+  ],
+  "auto_allow_skill_tool": true
+}
+```
+
+Fields:
+
+- `names`: optional list of Claude Code skill names, or `"all"` to expose all
+  discovered skills.
+- `sources`: skill sources that Aviary materializes into a local
+  `.claude/skills` directory before starting the provider.
+- `auto_allow_skill_tool`: when true, Aviary adds the Claude Code `Skill` tool
+  to `allowed_tools` for the session.
+
+Supported source types:
+
+- `local_path`: absolute path already visible inside the Aviary service
+  container. The path may be a single skill directory containing `SKILL.md`, a
+  root containing multiple skill directories, or a project directory containing
+  `.claude/skills/`.
+- `s3_uri`: S3 prefix such as `s3://bucket/path/to/skills`. This requires
+  optional S3 materialization dependencies or an equivalent server-side
+  materializer. If S3 is mounted into the container with tools such as
+  Mountpoint for Amazon S3 or `s3fs-fuse`, use `local_path` instead.
+
+Skill sources are standard DTOs. Clients should not use
+`provider_options.setting_sources` or raw provider settings to load arbitrary
+filesystem configuration.
 
 ## Provider Options
 

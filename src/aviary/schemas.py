@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -48,6 +49,11 @@ class WorkspaceRetention(str, Enum):
     KEEP = "keep"
 
 
+class SkillSourceType(str, Enum):
+    LOCAL_PATH = "local_path"
+    S3_URI = "s3_uri"
+
+
 class ModelConfig(BaseModel):
     name: str | None = Field(default=None, description="Logical or provider model name.")
     fallback: str | None = Field(default=None, description="Fallback model when provider supports it.")
@@ -82,6 +88,56 @@ class SandboxConfig(BaseModel):
     timeout_seconds: int | None = Field(default=None, gt=0)
 
 
+class SkillSource(BaseModel):
+    type: SkillSourceType
+    path: str | None = Field(default=None, description="Absolute path visible inside the Aviary runtime container.")
+    uri: str | None = Field(default=None, description="S3 URI for a skill bundle or skill root.")
+
+    @model_validator(mode="after")
+    def validate_source(self) -> "SkillSource":
+        if self.type == SkillSourceType.LOCAL_PATH:
+            if not self.path:
+                raise ValueError("local_path skill source requires path")
+            if not Path(self.path).expanduser().is_absolute():
+                raise ValueError("local_path skill source path must be absolute")
+            return self
+        if self.type == SkillSourceType.S3_URI:
+            if not self.uri:
+                raise ValueError("s3_uri skill source requires uri")
+            if not self.uri.startswith("s3://"):
+                raise ValueError("s3_uri skill source uri must start with s3://")
+            return self
+        raise ValueError(f"unsupported skill source type: {self.type}")
+
+
+class SkillConfig(BaseModel):
+    names: list[str] | Literal["all"] | None = Field(
+        default=None,
+        description="Optional Claude Code skill names to expose. Use 'all' to expose all discovered skills.",
+    )
+    sources: list[SkillSource] = Field(
+        default_factory=list,
+        description="Skill directories or object-store prefixes materialized by Aviary.",
+    )
+    auto_allow_skill_tool: bool = Field(
+        default=True,
+        description="When true, Aviary adds the Claude Code Skill tool to allowed tools for this session.",
+    )
+
+    @field_validator("names")
+    @classmethod
+    def validate_names(cls, value: list[str] | Literal["all"] | None) -> list[str] | Literal["all"] | None:
+        if value in (None, "all"):
+            return value
+        normalized = [item.strip() for item in value]
+        if any(not item for item in normalized):
+            raise ValueError("skill names cannot be empty")
+        return normalized
+
+    def is_enabled(self) -> bool:
+        return bool(self.sources or self.names)
+
+
 class ProviderOptionSupport(BaseModel):
     level: SupportLevel
     fields: list[str] = Field(default_factory=list)
@@ -97,6 +153,7 @@ class CreateSessionRequest(BaseModel):
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    skills: SkillConfig = Field(default_factory=SkillConfig)
     provider_options: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict, description="Non-authoritative caller metadata for correlation only.")
 

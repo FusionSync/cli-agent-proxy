@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 from claude_agent_sdk.types import (
@@ -160,7 +161,9 @@ def test_claude_code_provider_capabilities():
     assert capabilities.supports_streaming is True
     assert capabilities.supports_resume is True
     assert "model" in capabilities.session_config_fields
+    assert "skills" in capabilities.session_config_fields
     assert capabilities.config_schema["model"].level == "supported"
+    assert capabilities.config_schema["skills"].level == "supported"
     assert capabilities.config_schema["generation"].level == "unsupported"
 
 
@@ -215,6 +218,80 @@ async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options(
     }
     assert options.resume == "resume-id"
     assert options.max_turns == 4
+
+
+@pytest.mark.asyncio
+async def test_claude_code_provider_materializes_local_skill_sources(tmp_path: Path):
+    skill_root = tmp_path / "mounted-skills"
+    skill_dir = skill_root / "reviewer"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: reviewer\ndescription: Review code.\n---\nReview carefully.\n",
+        encoding="utf-8",
+    )
+
+    captured_options = []
+    stub_client = StubClaudeClient([])
+
+    async def fake_factory(options):
+        captured_options.append(options)
+        await stub_client.connect()
+        return stub_client
+
+    provider = ClaudeCodeProvider(client_factory=fake_factory)
+    request = CreateSessionRequest(
+        provider="claude-code",
+        conversation_id="conv-skills",
+        policy={"allowed_tools": ["Read"]},
+        skills={
+            "names": ["reviewer"],
+            "sources": [{"type": "local_path", "path": str(skill_root)}],
+        },
+    )
+
+    await provider.create_session("session-skills", request)
+    _ = [event async for event in provider.stream_message("session-skills", "use reviewer skill")]
+
+    options = captured_options[0]
+    assert options.skills == ["reviewer"]
+    assert "Skill" in options.allowed_tools
+    assert "Read" in options.allowed_tools
+    assert "project" in options.setting_sources
+    assert len(options.add_dirs) == 1
+    materialized_project = Path(options.add_dirs[0])
+    assert (materialized_project / ".claude" / "skills" / "reviewer" / "SKILL.md").exists()
+
+    await provider.close("session-skills")
+    assert not materialized_project.exists()
+
+
+@pytest.mark.asyncio
+async def test_claude_code_provider_does_not_auto_allow_disallowed_skill_tool(tmp_path: Path):
+    skill_dir = tmp_path / "reviewer"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text("---\nname: reviewer\ndescription: Review.\n---\n", encoding="utf-8")
+    captured_options = []
+    stub_client = StubClaudeClient([])
+
+    async def fake_factory(options):
+        captured_options.append(options)
+        await stub_client.connect()
+        return stub_client
+
+    provider = ClaudeCodeProvider(client_factory=fake_factory)
+    request = CreateSessionRequest(
+        policy={"disallowed_tools": ["Skill"]},
+        skills={"sources": [{"type": "local_path", "path": str(skill_dir)}]},
+    )
+
+    await provider.create_session("session-no-skill-tool", request)
+    _ = [event async for event in provider.stream_message("session-no-skill-tool", "hello")]
+
+    options = captured_options[0]
+    assert "Skill" not in options.allowed_tools
+    assert options.disallowed_tools == ["Skill"]
+
+    await provider.close("session-no-skill-tool")
 
 
 @pytest.mark.asyncio

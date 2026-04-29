@@ -43,6 +43,7 @@ Standard DTO groups:
 - `generation`
 - `policy`
 - `sandbox`
+- `skills`
 - `provider_options`
 
 Claude Code currently maps:
@@ -56,10 +57,74 @@ Claude Code currently maps:
 - `policy.execution_mode` -> `ClaudeAgentOptions.permission_mode`
 - `policy.allowed_tools` -> `ClaudeAgentOptions.allowed_tools`
 - `policy.disallowed_tools` -> `ClaudeAgentOptions.disallowed_tools`
+- `skills.names` -> `ClaudeAgentOptions.skills`
+- `skills.sources` -> materialized `.claude/skills` project directory exposed
+  through `ClaudeAgentOptions.add_dirs`
 
 The `generation` DTO is part of the standard API, but Claude Agent SDK does not
 currently expose direct `temperature`, `top_p`, `max_tokens`, or `stop` options.
 The Claude Code provider declares this as `unsupported` in capabilities.
+
+## Skill Injection
+
+Claude Agent SDK discovers skills from filesystem locations such as
+`.claude/skills/` when project settings are loaded. Aviary wraps that filesystem
+contract with a provider-neutral `skills` DTO.
+
+Local mounted directory:
+
+```json
+{
+  "skills": {
+    "names": ["reviewer"],
+    "sources": [
+      {
+        "type": "local_path",
+        "path": "/mnt/aviary-skills/team-a"
+      }
+    ]
+  }
+}
+```
+
+S3-backed source:
+
+```json
+{
+  "skills": {
+    "names": "all",
+    "sources": [
+      {
+        "type": "s3_uri",
+        "uri": "s3://company-agent-skills/claude"
+      }
+    ]
+  }
+}
+```
+
+For `local_path`, the directory can be:
+
+- a single skill directory containing `SKILL.md`
+- a root containing multiple `skill-name/SKILL.md` directories
+- a project directory containing `.claude/skills/`
+
+For `s3_uri`, Aviary materializes the object prefix into a temporary local
+directory before starting Claude Code. This path uses optional dependencies:
+
+```bash
+uv sync --extra skill-s3
+```
+
+If the deployment already mounts S3 as a local filesystem using tools such as
+Mountpoint for Amazon S3 or `s3fs-fuse`, prefer `local_path` and point it at the
+mounted skill root.
+
+When skills are enabled, Aviary adds the Claude Code `Skill` tool to
+`allowed_tools` unless `skills.auto_allow_skill_tool` is false. Direct
+`provider_options.setting_sources` and raw Claude settings should be avoided in
+managed deployments because they can load unrelated container/user
+configuration.
 
 Backward-compatible flat fields still accepted during early development:
 
@@ -81,20 +146,22 @@ Claude-specific provider options:
 - `provider_options.mcp_servers`
 - `provider_options.cli_path`
 - `provider_options.settings`
-- `provider_options.add_dirs`
 - `provider_options.extra_args`
 - `provider_options.max_buffer_size`
 - `provider_options.permission_prompt_tool_name`
 - `provider_options.user`
 - `provider_options.include_partial_messages`
 - `provider_options.fork_session`
-- `provider_options.setting_sources`
-- `provider_options.skills`
 - `provider_options.max_thinking_tokens`
 - `provider_options.effort`
 - `provider_options.output_format`
 - `provider_options.enable_file_checkpointing`
 - `provider_options.load_timeout_ms`
+
+Early releases also passed through `provider_options.add_dirs`,
+`provider_options.setting_sources`, and `provider_options.skills`. New
+integrations should use the standard `skills` DTO instead so Aviary can
+materialize sources and keep Claude Code configuration explicit.
 
 `metadata` is not forwarded into Claude SDK options. It is only caller-side
 correlation data.
@@ -124,6 +191,15 @@ Example:
     "profile": "default",
     "workspace_retention": "delete",
     "timeout_seconds": 1800
+  },
+  "skills": {
+    "names": ["reviewer"],
+    "sources": [
+      {
+        "type": "local_path",
+        "path": "/mnt/aviary-skills/team-a"
+      }
+    ]
   },
   "policy": {
     "execution_mode": "approve_edits",
