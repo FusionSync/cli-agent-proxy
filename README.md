@@ -61,8 +61,8 @@ one backend API without forcing your product to integrate each CLI directly.
 
 ## Current Status
 
-Aviary is early. The core boundary is in place, but production sandbox drivers
-are still planned.
+Aviary is early. The managed Docker boundary is taking shape, but the runtime
+image and full production deployment wiring are still planned.
 
 | Stage | Area | Status |
 | --- | --- | --- |
@@ -74,7 +74,8 @@ are still planned.
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | `SandboxDriver` runtime boundary | Implemented |
 | <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `LocalUnsafeSandboxDriver` | Implemented, development only |
-| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Docker one-container-per-session driver | Planned |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Docker runtime spec, JSONL protocol, CLI adapter | Implemented |
+| <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Docker runtime image and full container execution | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Kubernetes pod/job driver | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Persistent sessions, runs, events, approvals, audit | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Codex, Gemini CLI, OpenCode, ACP providers | Planned |

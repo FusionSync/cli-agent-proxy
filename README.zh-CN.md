@@ -57,7 +57,7 @@ Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provid
 
 ## 当前状态
 
-Aviary 还处于早期。核心运行时边界已经建立，但生产级 Docker/Kubernetes 沙箱 driver 仍在规划中。
+Aviary 还处于早期。Docker 托管边界已经开始落地，但 runtime image 和完整生产部署接线仍在规划中。
 
 | 阶段 | 模块 | 状态 |
 | --- | --- | --- |
@@ -69,7 +69,8 @@ Aviary 还处于早期。核心运行时边界已经建立，但生产级 Docker
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | `SandboxDriver` 运行时边界 | 已实现 |
 | <img src="docs/assets/status-dev.svg" alt="开发中" width="82"> | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
-| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | 每个 session 一个 Docker container | 规划中 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Docker runtime spec、JSONL protocol、CLI adapter | 已实现 |
+| <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Docker runtime image 和完整容器执行 | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Kubernetes pod/job driver | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | session/run/event/approval/audit 持久化 | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |

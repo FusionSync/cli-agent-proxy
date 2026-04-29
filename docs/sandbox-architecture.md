@@ -126,6 +126,11 @@ The current code does not import or call a Docker SDK directly; the engine
 adapter belongs behind `DockerRuntimeClient` so a sandbox manager can own Docker
 authority separately from the public API process.
 
+`DockerCliRuntimeClient` is the first engine adapter. It uses argv-based Docker
+CLI calls through an injectable command runner and never invokes a shell. This
+keeps command construction testable without requiring Docker on every developer
+machine.
+
 ## 6. Runtime Protocol
 
 The provider runtime inside the sandbox should expose an internal protocol to the
@@ -144,6 +149,18 @@ The Provider Runtime should normalize SDK/CLI events before forwarding them.
 Raw provider events are allowed for diagnostics, but product integrations should
 not rely on raw event shape.
 
+The current transport format is JSONL:
+
+```text
+RuntimeCommand line -> runtime process
+AgentEvent line     <- runtime process
+```
+
+`RuntimeCommand` accepts only `start`, `query`, `interrupt`, `close`, and
+`health`. Runtime output is schema-validated as `AgentEvent`, capped to a
+bounded line size, and the Docker CLI adapter rejects events whose `session_id`
+does not match the active session.
+
 The current code represents this boundary with `DockerRuntimeClient`:
 
 ```text
@@ -153,8 +170,9 @@ interrupt(session_id)
 close(session_id)
 ```
 
-Tests use a fake runtime client so the control-plane contract is verified
-without requiring Docker on the developer machine.
+Tests use fake runtime clients and fake Docker command runners so the
+control-plane contract and command construction are verified without requiring
+Docker on the developer machine.
 
 ## 7. Policy Enforcement
 
@@ -227,8 +245,9 @@ segments, and refuses to release paths outside its configured base directory.
 
 ### Phase 2B: Docker Engine Runtime
 
+- Add Docker CLI adapter behind `DockerRuntimeClient`.
+- Add JSONL runtime protocol codec.
 - Add runtime container image for Claude Code.
-- Add Docker Engine adapter behind `DockerRuntimeClient`.
 - Add isolated network creation.
 - Add secret resolver integration.
 - Add cleanup and timeout worker.
