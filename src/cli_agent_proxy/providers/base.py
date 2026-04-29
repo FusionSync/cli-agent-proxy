@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
-from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest
+from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities
 
 
 class AgentProvider(ABC):
@@ -18,3 +18,6 @@ class AgentProvider(ABC):
 
     @abstractmethod
     async def close(self, session_id: str) -> None: ...
+
+    @abstractmethod
+    def capabilities(self) -> ProviderCapabilities: ...

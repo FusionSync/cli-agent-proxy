@@ -62,6 +62,7 @@ class AgentEvent(BaseModel):
     type: Literal[
         "start",
         "ai_chunk",
+        "reasoning_delta",
         "tool_call",
         "tool_result",
         "error",
@@ -71,3 +72,15 @@ class AgentEvent(BaseModel):
     session_id: str
     conversation_id: str
     data: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProviderCapabilities(BaseModel):
+    provider: ProviderName
+    supports_streaming: bool = True
+    supports_resume: bool = False
+    supports_tools: bool = False
+    supports_file_watch: bool = False
+    supports_approval: bool = False
+    supports_model_switch: bool = False
+    session_config_fields: list[str] = Field(default_factory=list)
+    event_types: list[str] = Field(default_factory=list)

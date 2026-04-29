@@ -5,12 +5,16 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 ENV CLI_AGENT_PROXY_HOST=0.0.0.0
 ENV CLI_AGENT_PROXY_PORT=9000
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
 
-COPY pyproject.toml README.md /app/
+COPY --from=ghcr.io/astral-sh/uv:0.8.20 /uv /uvx /bin/
+
+COPY pyproject.toml uv.lock README.md /app/
 COPY src /app/src
 
-RUN pip install --no-cache-dir .
+RUN uv sync --frozen --no-dev
 
 EXPOSE 9000
 
-CMD ["uvicorn", "cli_agent_proxy.main:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["uv", "run", "uvicorn", "cli_agent_proxy.main:app", "--host", "0.0.0.0", "--port", "9000"]

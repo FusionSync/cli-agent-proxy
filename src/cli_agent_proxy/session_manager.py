@@ -7,6 +7,7 @@ from cli_agent_proxy.providers.base import AgentProvider
 from cli_agent_proxy.schemas import (
     AgentEvent,
     CreateSessionRequest,
+    ProviderCapabilities,
     SessionResponse,
     SessionStatus,
     StreamMessageRequest,
@@ -46,6 +47,15 @@ class SessionManager:
         if session is None:
             return None
         return self._to_response(session)
+
+    def list_providers(self) -> list[str]:
+        return sorted(self._providers.keys())
+
+    def get_provider_capabilities(self, provider_name: str) -> ProviderCapabilities | None:
+        provider = self._providers.get(provider_name)
+        if provider is None:
+            return None
+        return provider.capabilities()
 
     async def stream_message(self, session_id: str, request: StreamMessageRequest) -> AsyncIterator[AgentEvent]:
         session = self._get_required_session(session_id)

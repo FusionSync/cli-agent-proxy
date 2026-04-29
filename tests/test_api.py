@@ -36,6 +36,22 @@ def test_create_and_get_session():
     assert get_response.json()["session_id"] == session["session_id"]
 
 
+def test_provider_capabilities_endpoints():
+    client = TestClient(create_app())
+
+    providers_response = client.get("/v1/providers")
+    capabilities_response = client.get("/v1/providers/claude-code/capabilities")
+
+    assert providers_response.status_code == 200
+    assert providers_response.json() == {"providers": ["claude-code"]}
+    assert capabilities_response.status_code == 200
+    capabilities = capabilities_response.json()
+    assert capabilities["provider"] == "claude-code"
+    assert capabilities["supports_streaming"] is True
+    assert capabilities["supports_resume"] is True
+    assert "model" in capabilities["session_config_fields"]
+
+
 def test_stream_message_returns_sse_events():
     client = TestClient(create_app())
     session = client.post(

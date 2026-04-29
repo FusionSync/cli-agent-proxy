@@ -176,6 +176,9 @@ Claude Code provider must support:
 - permission mode where supported
 - normalized event mapping
 
+Initial SDK support is documented in
+[claude-code-provider.md](claude-code-provider.md).
+
 ## 6. Unified Provider Contract
 
 Each provider adapter must implement:

@@ -65,20 +65,20 @@ This repository is in early bootstrap stage.
 Implemented now:
 
 - FastAPI service skeleton
-- Claude Code provider placeholder
+- Claude Code provider with Claude Agent SDK option construction and event mapping
 - session create/get/delete
 - SSE message stream endpoint
+- provider capabilities endpoint
 - in-memory session manager
 - initial product design document
 
 Planned next:
 
 - normalized event schema
-- provider capabilities endpoint
 - persistent storage
 - Docker sandbox driver
 - production policy and approval model
-- real Claude Code SDK event mapping
+- production Claude Code process hardening
 
 By default, the Claude Code provider uses a mock fallback so the project can be
 tested without a local Claude Code runtime. Set
@@ -123,6 +123,8 @@ Sandbox Layer
 ```
 
 The design source of truth is [docs/product-design.md](docs/product-design.md).
+Claude Code provider details are documented in
+[docs/claude-code-provider.md](docs/claude-code-provider.md).
 
 ## Claude Code First
 

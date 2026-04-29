@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from cli_agent_proxy.providers.claude_code import ClaudeCodeProvider
-from cli_agent_proxy.schemas import CreateSessionRequest, SessionResponse, StreamMessageRequest
+from cli_agent_proxy.schemas import CreateSessionRequest, ProviderCapabilities, SessionResponse, StreamMessageRequest
 from cli_agent_proxy.session_manager import SessionManager
 
 
@@ -21,6 +21,17 @@ def create_app() -> FastAPI:
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/v1/providers")
+    async def list_providers() -> dict[str, list[str]]:
+        return {"providers": manager.list_providers()}
+
+    @app.get("/v1/providers/{provider_name}/capabilities", response_model=ProviderCapabilities)
+    async def get_provider_capabilities(provider_name: str) -> ProviderCapabilities:
+        capabilities = manager.get_provider_capabilities(provider_name)
+        if capabilities is None:
+            raise HTTPException(status_code=404, detail="provider not found")
+        return capabilities
 
     @app.post("/v1/sessions", response_model=SessionResponse)
     async def create_session(request: CreateSessionRequest) -> SessionResponse:
