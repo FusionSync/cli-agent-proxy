@@ -3,12 +3,12 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
-from cli_agent_proxy.providers.base import AgentProvider
-from cli_agent_proxy.providers.claude_code import ClaudeCodeProvider
-from cli_agent_proxy.sandbox.base import SandboxDriver
-from cli_agent_proxy.sandbox.local_unsafe import LocalUnsafeSandboxDriver
-from cli_agent_proxy.schemas import CreateSessionRequest, ProviderCapabilities, SessionResponse, StreamMessageRequest
-from cli_agent_proxy.session_manager import SessionManager
+from aviary.providers.base import AgentProvider
+from aviary.providers.claude_code import ClaudeCodeProvider
+from aviary.sandbox.base import SandboxDriver
+from aviary.sandbox.local_unsafe import LocalUnsafeSandboxDriver
+from aviary.schemas import CreateSessionRequest, ProviderCapabilities, SessionResponse, StreamMessageRequest
+from aviary.session_manager import SessionManager
 
 
 def create_app(
@@ -21,7 +21,7 @@ def create_app(
     driver = sandbox_driver or LocalUnsafeSandboxDriver(providers=provider_registry)
     manager = SessionManager(sandbox_driver=driver)
 
-    app = FastAPI(title="CLI Agent Proxy", version="0.1.0")
+    app = FastAPI(title="Aviary", version="0.1.0")
     app.state.session_manager = manager
 
     @app.get("/healthz")

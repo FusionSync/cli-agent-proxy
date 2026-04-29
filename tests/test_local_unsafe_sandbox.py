@@ -2,9 +2,9 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-from cli_agent_proxy.providers.base import AgentProvider
-from cli_agent_proxy.sandbox.local_unsafe import LocalUnsafeSandboxDriver
-from cli_agent_proxy.schemas import (
+from aviary.providers.base import AgentProvider
+from aviary.sandbox.local_unsafe import LocalUnsafeSandboxDriver
+from aviary.schemas import (
     AgentEvent,
     CreateSessionRequest,
     ProviderCapabilities,

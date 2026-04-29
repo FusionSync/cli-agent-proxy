@@ -3,7 +3,7 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cli-agent-proxy"
+name = "aviary"
 version = "0.1.0"
 description = "Sandbox-first runtime gateway for CLI coding agents."
 readme = "README.md"
@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [
   { name = "FusionSync" },
 ]
-keywords = ["agent", "claude-code", "codex", "cli-agent", "sse", "sandbox"]
+keywords = ["agent", "airlock", "claude-code", "codex", "cli-agent", "sse", "sandbox"]
 dependencies = [
   "fastapi>=0.115,<1.0",
   "uvicorn[standard]>=0.30,<1.0",
@@ -28,9 +28,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/FusionSync/cli-agent-proxy"
-Repository = "https://github.com/FusionSync/cli-agent-proxy"
-Documentation = "https://github.com/FusionSync/cli-agent-proxy/tree/main/docs"
+Homepage = "https://github.com/FusionSync/aviary"
+Repository = "https://github.com/FusionSync/aviary"
+Documentation = "https://github.com/FusionSync/aviary/tree/main/docs"
 
 [tool.setuptools.packages.find]
 where = ["src"]

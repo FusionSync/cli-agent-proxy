@@ -1,4 +1,4 @@
-<h1 align="center">CLI Agent Proxy</h1>
+<h1 align="center">Aviary</h1>
 
 <p align="center">
   <strong>Sandbox-first runtime gateway for CLI coding agents.</strong>
@@ -29,7 +29,7 @@
 
 ```text
 Application backend
-  -> CLI Agent Proxy control API
+  -> Aviary control API
     -> Sandbox Manager
       -> per-session runtime sandbox
         -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
@@ -40,14 +40,15 @@ Application backend
 Most "agent server" integrations do one thing: start a CLI process and stream
 the output.
 
-CLI Agent Proxy takes a different stance:
+Aviary takes a different stance:
 
 ```text
 one session -> one sandbox -> one workspace -> one credential context
 ```
 
-The runtime is the product. Provider SDKs and CLIs are plugins inside that
-runtime.
+Aviary is not a single cage. It is a managed collection of isolated habitats:
+different providers, policies, workspaces, model gateways, and runtime profiles
+can coexist behind one backend API.
 
 That distinction matters when an upper-layer product needs to serve many users,
 run inside a private network, isolate workspaces, route private model gateways,
@@ -63,10 +64,10 @@ protocol-based agents inside their own systems. But every provider has a
 different process model, permission model, config surface, event stream, and
 session lifecycle.
 
-CLI Agent Proxy is the missing runtime layer between application backends and
+Aviary is the missing runtime layer between application backends and
 agent providers.
 
-| Problem | CLI Agent Proxy direction |
+| Problem | Aviary direction |
 | --- | --- |
 | Every agent has a different API | One Session, Message, Event, Policy, and Sandbox contract |
 | Provider sessions are hard to host safely | One managed runtime environment per session |
@@ -170,7 +171,7 @@ uv run pytest
 Start the API:
 
 ```bash
-uv run uvicorn cli_agent_proxy.main:app --reload --host 0.0.0.0 --port 9000
+uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 ```
 
 Create a Claude Code session:
@@ -326,8 +327,8 @@ Provider details: [docs/claude-code-provider.md](docs/claude-code-provider.md)
 Current Docker image:
 
 ```bash
-docker build -t cli-agent-proxy .
-docker run --rm -p 9000:9000 cli-agent-proxy
+docker build -t aviary .
+docker run --rm -p 9000:9000 aviary
 ```
 
 The current image runs the API service as a non-root user. It does not yet

@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 
-from cli_agent_proxy.main import create_app
-from cli_agent_proxy.providers.base import AgentProvider
-from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities, ProviderName
+from aviary.main import create_app
+from aviary.providers.base import AgentProvider
+from aviary.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities, ProviderName
 
 
 class StubProvider(AgentProvider):

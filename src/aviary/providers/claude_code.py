@@ -2,8 +2,8 @@ from collections.abc import AsyncIterator
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from cli_agent_proxy.providers.base import AgentProvider
-from cli_agent_proxy.schemas import (
+from aviary.providers.base import AgentProvider
+from aviary.schemas import (
     AgentEvent,
     CreateSessionRequest,
     ExecutionMode,

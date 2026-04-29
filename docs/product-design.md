@@ -1,22 +1,26 @@
-# CLI Agent Proxy Product Design
+# Aviary Product Design
 
 Status: draft  
 Last updated: 2026-04-29
 
-Chinese product name: CLI Agent 代理
-Engineering name: `cli-agent-proxy`
+Chinese product name: Aviary
+Engineering name: `aviary`
 
 ## 1. Product Definition
 
-CLI Agent Proxy is an offline-first runtime gateway for CLI agents.
+Aviary is an offline-first runtime gateway for CLI agents.
 
 It gives application backends one stable API for creating, streaming,
 interrupting, auditing, and destroying agent sessions while each session runs in
 its own managed runtime environment.
 
+The name intentionally points to a collection of isolated habitats rather than
+one generic proxy: different providers can run in different managed enclosures
+under a shared backend contract.
+
 ```text
 Application backend
-  -> CLI Agent Proxy control API
+  -> Aviary control API
     -> sandbox manager
       -> per-session runtime sandbox
         -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
@@ -27,7 +31,7 @@ wrapper.
 
 ## 2. Core Positioning
 
-CLI Agent Proxy is:
+Aviary is:
 
 - A runtime control plane for CLI agents.
 - A sandbox lifecycle manager for agent sessions.
@@ -35,7 +39,7 @@ CLI Agent Proxy is:
 - A self-hosted component that can run inside private networks.
 - An event-first interface for audit, replay, approvals, and UI streaming.
 
-CLI Agent Proxy is not:
+Aviary is not:
 
 - A model gateway.
 - A chat bridge like cc-connect.
@@ -334,7 +338,7 @@ provider runtime
 ```
 
 Claude Code / Claude Agent SDK does not provide an official standalone HTTP
-daemon. CLI Agent Proxy provides the HTTP/SSE service and uses the SDK inside a
+daemon. Aviary provides the HTTP/SSE service and uses the SDK inside a
 runtime process.
 
 Details are documented in [claude-code-provider.md](claude-code-provider.md).
@@ -350,7 +354,7 @@ multi-project workflows, and ACP ideas. It is primarily a chat bridge:
 IM/chat platform -> local AI coding agent
 ```
 
-CLI Agent Proxy is a runtime gateway:
+Aviary is a runtime gateway:
 
 ```text
 application backend -> secure runtime API -> sandboxed agent session

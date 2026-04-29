@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator, Iterable
 
-from cli_agent_proxy.sandbox.base import SandboxDriver
-from cli_agent_proxy.schemas import (
+from aviary.sandbox.base import SandboxDriver
+from aviary.schemas import (
     AgentEvent,
     CreateSessionRequest,
     ProviderCapabilities,

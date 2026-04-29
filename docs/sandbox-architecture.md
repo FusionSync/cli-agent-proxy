@@ -3,7 +3,7 @@
 Status: draft  
 Last updated: 2026-04-29
 
-This document defines the core architectural direction for CLI Agent Proxy:
+This document defines the core architectural direction for Aviary:
 container and sandbox lifecycle management is the runtime boundary of the
 product.
 

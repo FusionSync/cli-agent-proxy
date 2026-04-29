@@ -22,4 +22,4 @@ USER app
 
 EXPOSE 9000
 
-CMD ["uv", "run", "uvicorn", "cli_agent_proxy.main:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["uv", "run", "uvicorn", "aviary.main:app", "--host", "0.0.0.0", "--port", "9000"]

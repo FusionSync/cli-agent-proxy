@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
-from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities
+from aviary.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities
 
 
 class AgentProvider(ABC):

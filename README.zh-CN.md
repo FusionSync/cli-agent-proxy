@@ -1,4 +1,4 @@
-<h1 align="center">CLI Agent Proxy</h1>
+<h1 align="center">Aviary</h1>
 
 <p align="center">
   <strong>面向 CLI Coding Agent 的沙箱优先 Runtime Gateway。</strong>
@@ -29,7 +29,7 @@
 
 ```text
 应用后端
-  -> CLI Agent Proxy 控制面 API
+  -> Aviary 控制面 API
     -> Sandbox Manager
       -> 每个会话一个 Runtime Sandbox
         -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
@@ -39,13 +39,13 @@
 
 很多 Agent Server 的实现只是“在服务端拉起一个 CLI 进程，然后把输出流式返回”。
 
-CLI Agent Proxy 的立场不同：
+Aviary 的立场不同：
 
 ```text
 一个会话 -> 一个沙箱 -> 一个工作区 -> 一组短期凭证上下文
 ```
 
-Runtime 才是产品核心。Provider SDK 和 CLI 只是运行在 Runtime 里的插件。
+Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provider、策略、工作区、模型网关和运行时 profile 可以共存在同一个后端接口之后。
 
 这个差异在 SaaS、多用户平台、私有化部署、离线部署、模型网关、审计、审批、工作区隔离、凭证隔离这些场景里非常关键。
 
@@ -55,9 +55,9 @@ Coding Agent 正在从本地开发工具变成基础设施。
 
 上层产品希望把 Claude Code、Codex、Gemini CLI、OpenCode 和协议型 Agent 嵌进自己的系统。但每个 Provider 都有自己的进程模型、权限模型、配置方式、事件流格式和会话生命周期。
 
-CLI Agent Proxy 要补的是中间那层 Runtime：
+Aviary 要补的是中间那层 Runtime：
 
-| 问题 | CLI Agent Proxy 的方向 |
+| 问题 | Aviary 的方向 |
 | --- | --- |
 | 每家 Agent 都有不同接口 | 抽象统一的 Session、Message、Event、Policy、Sandbox 合约 |
 | Provider 会话难以安全托管 | 每个会话一个受管理的运行环境 |
@@ -158,7 +158,7 @@ uv run pytest
 启动 API：
 
 ```bash
-uv run uvicorn cli_agent_proxy.main:app --reload --host 0.0.0.0 --port 9000
+uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 ```
 
 创建 Claude Code 会话：
@@ -300,7 +300,7 @@ Provider Runtime
         -> ANTHROPIC_BASE_URL / private model gateway
 ```
 
-Claude Code / Claude Agent SDK 不提供官方 standalone HTTP daemon。CLI Agent Proxy 提供 HTTP/SSE 服务，并在运行时边界内使用 SDK。
+Claude Code / Claude Agent SDK 不提供官方 standalone HTTP daemon。Aviary 提供 HTTP/SSE 服务，并在运行时边界内使用 SDK。
 
 Provider 细节：[docs/claude-code-provider.md](docs/claude-code-provider.md)
 
@@ -309,8 +309,8 @@ Provider 细节：[docs/claude-code-provider.md](docs/claude-code-provider.md)
 当前 Docker 镜像：
 
 ```bash
-docker build -t cli-agent-proxy .
-docker run --rm -p 9000:9000 cli-agent-proxy
+docker build -t aviary .
+docker run --rm -p 9000:9000 aviary
 ```
 
 当前镜像以非 root 用户运行 API 服务。它还没有实现每个 session 一个 Docker container。

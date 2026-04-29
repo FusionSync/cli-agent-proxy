@@ -2,7 +2,7 @@
 
 Status: draft
 
-CLI Agent Proxy uses DTO-style request schemas so providers can expose different
+Aviary uses DTO-style request schemas so providers can expose different
 support levels while clients keep one stable integration shape.
 
 The public session creation schema is split into standard DTO groups plus

@@ -10,8 +10,8 @@ from claude_agent_sdk.types import (
     ToolUseBlock,
 )
 
-from cli_agent_proxy.providers.claude_code import ClaudeCodeProvider
-from cli_agent_proxy.schemas import CreateSessionRequest, ExecutionMode
+from aviary.providers.claude_code import ClaudeCodeProvider
+from aviary.schemas import CreateSessionRequest, ExecutionMode
 
 
 class StubClaudeClient:

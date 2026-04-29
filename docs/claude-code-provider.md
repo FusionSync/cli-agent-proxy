@@ -2,8 +2,8 @@
 
 Status: initial SDK support
 
-The `claude-code` provider is the first provider implemented by CLI Agent
-Proxy. It uses the Python `claude-agent-sdk` package and `ClaudeSDKClient`
+The `claude-code` provider is the first provider implemented by Aviary.
+It uses the Python `claude-agent-sdk` package and `ClaudeSDKClient`
 inside the provider runtime process.
 
 ## Runtime Path
@@ -17,7 +17,7 @@ Sandbox runtime
 ```
 
 Claude Code / Claude Agent SDK does not provide an official standalone HTTP
-daemon. CLI Agent Proxy provides the HTTP/SSE API and uses the SDK internally.
+daemon. Aviary provides the HTTP/SSE API and uses the SDK internally.
 
 ## Running Locally
 
@@ -28,7 +28,7 @@ the stream returns an `error` event instead of synthetic agent output.
 Start the API:
 
 ```bash
-uv run uvicorn cli_agent_proxy.main:app --host 0.0.0.0 --port 9000
+uv run uvicorn aviary.main:app --host 0.0.0.0 --port 9000
 ```
 
 ## Session Configuration
@@ -147,7 +147,7 @@ through secrets or an internal model gateway.
 
 ## Normalized Events
 
-The provider maps Claude Agent SDK messages into common CLI Agent Proxy events:
+The provider maps Claude Agent SDK messages into common Aviary events:
 
 - `TextBlock` -> `ai_chunk`
 - `ThinkingBlock` -> `reasoning_delta`
