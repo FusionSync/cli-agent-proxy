@@ -4,25 +4,26 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from aviary.providers.base import AgentProvider
-from aviary.providers.claude_code import ClaudeCodeProvider
 from aviary.sandbox.base import SandboxDriver
-from aviary.sandbox.local_unsafe import LocalUnsafeSandboxDriver
 from aviary.schemas import CreateSessionRequest, ProviderCapabilities, SessionResponse, StreamMessageRequest
 from aviary.session_manager import SessionManager
+from aviary.settings import AviarySettings, build_sandbox_driver, default_provider_registry
 
 
 def create_app(
     providers: dict[str, AgentProvider] | None = None,
     sandbox_driver: SandboxDriver | None = None,
+    settings: AviarySettings | None = None,
 ) -> FastAPI:
-    provider_registry = providers or {
-        ClaudeCodeProvider.name: ClaudeCodeProvider(),
-    }
-    driver = sandbox_driver or LocalUnsafeSandboxDriver(providers=provider_registry)
+    app_settings = settings or AviarySettings.from_env()
+    provider_registry = providers or default_provider_registry()
+    driver = sandbox_driver or build_sandbox_driver(app_settings, providers=provider_registry)
     manager = SessionManager(sandbox_driver=driver)
 
     app = FastAPI(title="Aviary", version="0.1.0")
     app.state.session_manager = manager
+    app.state.sandbox_driver = driver
+    app.state.settings = app_settings
 
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:

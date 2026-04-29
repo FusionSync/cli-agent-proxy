@@ -82,6 +82,23 @@ FastAPI
 It is named unsafe because it is not an isolation layer. It should not be used
 as the managed production runtime.
 
+Runtime mode is configured with `AVIARY_SANDBOX_MODE`:
+
+- `local-unsafe`: default developer mode. Provider adapters run inside the API
+  process.
+- `docker-cli`: managed Docker CLI mode. `create_app()` wires
+  `DockerSandboxDriver` to `DockerCliRuntimeClient`.
+
+Related Docker settings:
+
+- `AVIARY_WORKSPACE_BASE_PATH`
+- `AVIARY_DOCKER_BINARY`
+- `AVIARY_DOCKER_CONTAINER_PREFIX`
+- `AVIARY_DOCKER_RUNTIME_IMAGE`
+
+`docker-cli` must be enabled deliberately. It should run in a sandbox manager
+context, not in a public API container with a blindly mounted Docker socket.
+
 ## 5. Docker Driver Target
 
 The Docker path is split into two layers.

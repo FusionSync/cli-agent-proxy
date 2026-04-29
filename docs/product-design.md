@@ -157,6 +157,10 @@ FastAPI process
 This mode is useful for development and provider integration tests. It is not a
 security boundary and must not be described as production isolation.
 
+The default `AVIARY_SANDBOX_MODE` is `local-unsafe` so contributors can run the
+project without Docker. Managed deployments must opt into a sandbox mode
+explicitly.
+
 ### Single-Node Production
 
 Target first production deployment:
@@ -178,6 +182,10 @@ protocol. It also includes a Docker CLI runtime client with an injectable
 command runner plus a short-lived `aviary-runtime` CLI worker. The actual
 Claude Code runtime image and full production deployment wiring are still
 planned.
+
+The first managed mode is `AVIARY_SANDBOX_MODE=docker-cli`. It wires the control
+plane to `DockerSandboxDriver` and `DockerCliRuntimeClient`; Docker authority
+should belong to a sandbox manager context, not a public API container.
 
 ### Kubernetes Production
 

@@ -92,6 +92,18 @@ uv run pytest
 uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 ```
 
+Runtime mode is explicit:
+
+```bash
+# default: development only, provider runs inside the API process
+AVIARY_SANDBOX_MODE=local-unsafe
+
+# managed Docker CLI path, requires Docker access in the sandbox manager context
+AVIARY_SANDBOX_MODE=docker-cli
+AVIARY_WORKSPACE_BASE_PATH=/var/lib/aviary/workspaces
+AVIARY_DOCKER_RUNTIME_IMAGE=ghcr.io/fusionsync/aviary-claude-code-runtime:latest
+```
+
 ## Architecture
 
 <p align="center">

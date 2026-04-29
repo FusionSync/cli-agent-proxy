@@ -117,6 +117,10 @@ class DockerSandboxDriver(SandboxDriver):
         self._profiles = dict(profiles or {"default": DockerSandboxProfile()})
         self._sessions: dict[str, DockerManagedSession] = {}
 
+    @property
+    def runtime_client(self) -> DockerRuntimeClient:
+        return self._runtime_client
+
     async def create_session(self, session_id: str, request: CreateSessionRequest) -> None:
         if request.provider.value not in self._providers:
             raise ValueError(f"unsupported provider: {request.provider}")

@@ -85,6 +85,18 @@ uv run pytest
 uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 ```
 
+运行模式需要显式选择：
+
+```bash
+# 默认：仅开发使用，Provider 在 API 进程内运行
+AVIARY_SANDBOX_MODE=local-unsafe
+
+# Docker CLI 托管路径，需要 sandbox manager 上下文具备 Docker 权限
+AVIARY_SANDBOX_MODE=docker-cli
+AVIARY_WORKSPACE_BASE_PATH=/var/lib/aviary/workspaces
+AVIARY_DOCKER_RUNTIME_IMAGE=ghcr.io/fusionsync/aviary-claude-code-runtime:latest
+```
+
 ## 架构
 
 <p align="center">
