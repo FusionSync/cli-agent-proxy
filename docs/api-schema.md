@@ -16,6 +16,7 @@ provider-specific options:
   "runtime": {},
   "generation": {},
   "policy": {},
+  "sandbox": {},
   "provider_options": {},
   "metadata": {}
 }
@@ -106,6 +107,27 @@ Fields:
 Sandbox enforcement is required before filesystem and network policy can be
 considered production-safe.
 
+## SandboxConfig
+
+```json
+{
+  "profile": "default",
+  "workspace_retention": "delete",
+  "timeout_seconds": 1800
+}
+```
+
+Fields:
+
+- `profile`: server-defined runtime profile. The server maps it to Docker,
+  Kubernetes, or other sandbox settings.
+- `workspace_retention`: one of `delete`, `snapshot`, `keep`.
+- `timeout_seconds`: hard upper bound for the session runtime when supported.
+
+The public schema intentionally avoids exposing Docker socket, host path, or
+privileged container controls. Managed deployments should keep those decisions
+server-side.
+
 ## Provider Options
 
 `provider_options` contains provider-specific fields. For Claude Code, examples
@@ -121,6 +143,9 @@ include:
 
 Provider-specific fields should not become cross-provider public contract unless
 they are promoted into one of the standard DTO groups.
+
+Do not put provider-specific control fields in `metadata`; metadata is only for
+caller-side correlation.
 
 ## Capability Support Levels
 

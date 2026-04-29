@@ -15,6 +15,11 @@ COPY src /app/src
 
 RUN uv sync --frozen --no-dev
 
+RUN groupadd --system app && useradd --system --gid app --home-dir /app app \
+    && chown -R app:app /app
+
+USER app
+
 EXPOSE 9000
 
 CMD ["uv", "run", "uvicorn", "cli_agent_proxy.main:app", "--host", "0.0.0.0", "--port", "9000"]

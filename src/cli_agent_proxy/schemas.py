@@ -42,6 +42,12 @@ class NetworkPolicy(str, Enum):
     UNRESTRICTED = "unrestricted"
 
 
+class WorkspaceRetention(str, Enum):
+    DELETE = "delete"
+    SNAPSHOT = "snapshot"
+    KEEP = "keep"
+
+
 class ModelConfig(BaseModel):
     name: str | None = Field(default=None, description="Logical or provider model name.")
     fallback: str | None = Field(default=None, description="Fallback model when provider supports it.")
@@ -70,6 +76,12 @@ class PolicyConfig(BaseModel):
     allowed_hosts: list[str] = Field(default_factory=list)
 
 
+class SandboxConfig(BaseModel):
+    profile: str | None = Field(default=None, description="Server-defined sandbox runtime profile.")
+    workspace_retention: WorkspaceRetention = Field(default=WorkspaceRetention.DELETE)
+    timeout_seconds: int | None = Field(default=None, gt=0)
+
+
 class ProviderOptionSupport(BaseModel):
     level: SupportLevel
     fields: list[str] = Field(default_factory=list)
@@ -84,6 +96,7 @@ class CreateSessionRequest(BaseModel):
     runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     provider_options: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict, description="Non-authoritative caller metadata for correlation only.")
 

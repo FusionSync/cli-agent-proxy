@@ -85,8 +85,7 @@ class ClaudeCodeProvider(AgentProvider):
     def _build_options(self, session_id: str, request: CreateSessionRequest) -> Any:
         from claude_agent_sdk import ClaudeAgentOptions
 
-        metadata = request.metadata
-        provider_options = {**request.provider_options, **metadata}
+        provider_options = request.provider_options
         env = {
             **request.runtime.env,
             **request.env,
@@ -96,7 +95,7 @@ class ClaudeCodeProvider(AgentProvider):
         if request.runtime.api_key_ref:
             env["CLI_AGENT_PROXY_API_KEY_REF"] = request.runtime.api_key_ref
 
-        options_kwargs: dict[str, Any] = {"session_id": str(metadata.get("session_id") or session_id)}
+        options_kwargs: dict[str, Any] = {"session_id": session_id}
         cwd = request.runtime.cwd or request.cwd
         if cwd:
             options_kwargs["cwd"] = cwd

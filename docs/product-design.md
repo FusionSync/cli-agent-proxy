@@ -3,136 +3,129 @@
 Status: draft  
 Last updated: 2026-04-29
 
-## 1. Product Definition
-
-CLI Agent Proxy is an offline-first, self-hosted runtime gateway for agent and
-CLI-agent systems.
-
-It provides one secure API for upper-layer products and private deployments to run
-Claude Code first, then Codex, Gemini CLI, OpenCode, ACP-compatible agents, and
-future coding agents through a consistent session, message, event, approval, and
-workspace interface.
-
 Chinese product name: CLI Agent 代理
-
 Engineering name: `cli-agent-proxy`
 
-Positioning:
+## 1. Product Definition
+
+CLI Agent Proxy is an offline-first runtime gateway for CLI agents.
+
+It gives application backends one stable API for creating, streaming,
+interrupting, auditing, and destroying agent sessions while each session runs in
+its own managed runtime environment.
 
 ```text
-Upper-layer Agent products / platforms
-  -> CLI Agent Proxy unified runtime API
-    -> provider adapters
-      -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
+Application backend
+  -> CLI Agent Proxy control API
+    -> sandbox manager
+      -> per-session runtime sandbox
+        -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
 ```
 
-## 2. Non-Goals
+The first provider is Claude Code. The product must not become a Claude-only
+wrapper.
+
+## 2. Core Positioning
+
+CLI Agent Proxy is:
+
+- A runtime control plane for CLI agents.
+- A sandbox lifecycle manager for agent sessions.
+- A provider-neutral API for upper-layer Agent products.
+- A self-hosted component that can run inside private networks.
+- An event-first interface for audit, replay, approvals, and UI streaming.
 
 CLI Agent Proxy is not:
 
-- A model gateway. It may call a model gateway, but does not primarily provide
-  LLM completion APIs.
-- A chat platform bridge like cc-connect. ChatOps adapters can be built on top,
-  but the core API is for managed platform/backend integration.
-- A config switcher like CC Switch. Provider configuration is part of runtime
-  execution, not the main product.
-- A single-user local desktop helper.
+- A model gateway.
+- A chat bridge like cc-connect.
+- A local config switcher like CC Switch.
+- A single-user desktop wrapper.
+- A replacement for provider-native SDKs.
 
-## 3. Core Principles
+## 3. Design Principles
 
-### Offline-First and Self-Hosted
+### Sandbox First
 
-The product must run in customer-controlled environments:
+The primary security boundary is the runtime sandbox, not the provider's own
+permission mode.
+
+```text
+one session
+  -> one sandbox
+    -> one workspace
+      -> one short-lived credential context
+```
+
+Provider-native sandboxing and permission modes are defense-in-depth. They are
+useful, but they cannot be the only isolation layer for SaaS or multi-user
+platform scenarios.
+
+### Offline First
+
+The system must run without a public control plane:
 
 - local Docker Compose
 - private cloud VM
 - private Kubernetes cluster
 - enterprise intranet
 
-No public control plane is required. Telemetry must be disabled by default or
-absent. All dependencies required for production operation must have offline or
+Telemetry is absent or disabled by default. Production dependencies must have
 self-hosted alternatives.
 
-### Isolation Boundaries
+### Provider Neutral
 
-The primary use case is platform builders embedding third-party agent runtimes into
-their own upper-layer Agent products.
-
-`session_id`, sandbox identity, workspace allocation, and credential context are
-first-class concepts. A session must not access another session's files,
-credentials, processes, model tokens, or network resources.
-
-Default security boundary:
-
-```text
-session = security boundary
-```
-
-Higher-security deployments should use:
-
-```text
-one session -> one sandbox -> one workspace -> one short-lived credential set
-```
-
-### Provider Abstraction
-
-The API must not be shaped only around Claude Code. Each provider implements the
-same high-level contract and advertises capabilities.
+Each provider advertises capabilities instead of pretending every agent supports
+the same features.
 
 Examples:
 
-- Claude Code may support resume, tool use, file edits, and permission modes.
-- Codex may support a different session model.
-- ACP-compatible agents may expose a standard protocol but not all CLI-specific
-  features.
+- Claude Code supports session resume, tools, permission modes, and file edits.
+- Codex may expose different sandbox flags and CLI lifecycle behavior.
+- ACP-compatible agents may expose a protocol but not all CLI-specific features.
 
-The system should expose capabilities instead of pretending every provider has
-identical behavior.
+### Event First
 
-### Event-First Runtime
-
-The runtime output is a durable event stream, not only final text.
-
-Upper-layer upper-layer products need to observe, persist, audit, interrupt, replay,
-and display the run process. Provider-specific messages must be normalized into
-a stable event schema.
+Agent output is a stream of normalized events, not just final text. Upper-layer
+products need to persist, audit, replay, interrupt, and render the whole run.
 
 ## 4. Reference Architecture
 
 ```text
-Client / bamboo / Application backend / ChatOps adapter
+Client / bamboo / product backend / ChatOps adapter
         |
-        | HTTP API / SSE / WebSocket
+        | HTTP API / SSE
         v
 Control Plane
-  - OpenAPI
+  - public API and OpenAPI schema
   - auth integration hooks
   - session registry
-  - runtime policy
+  - policy validation
   - provider routing
+  - event and audit persistence
+  - approval state
+        |
+        | internal runtime protocol
+        v
+Sandbox Manager
+  - sandbox driver selection
   - workspace allocation
-  - audit log
-  - worker scheduling
-        |
-        | internal RPC / HTTP
-        v
-Worker Plane
-  - provider adapter process lifecycle
-  - sandbox lifecycle
-  - workspace mount
+  - secret injection
   - resource limits
-  - event streaming
-  - interrupt / approval handling
+  - timeout cleanup
+  - interrupt and kill escalation
+  - event forwarding
+        |
+        | Docker / Kubernetes / local unsafe
+        v
+Provider Runtime Sandbox
+  - one runtime per session
+  - provider adapter process
+  - provider SDK or CLI
+  - normalized event mapping
         |
         v
-Sandbox Layer
-  - local process driver for development only
-  - per-session Docker container
-  - Kubernetes pod or job
-  - future: gVisor, Kata, Firecracker
-        |
-        v
-Provider Adapter
+Agent Provider
   - claude-code
   - codex
   - gemini-cli
@@ -140,77 +133,96 @@ Provider Adapter
   - acp
 ```
 
-Control Plane should not directly run untrusted agents in production. It manages
-sessions, policies, storage, and worker routing. Worker Plane runs provider
-adapters inside an enforceable sandbox.
+The Control Plane must not run untrusted provider SDKs in production. It should
+own policy and routing, while the Sandbox Manager owns process and container
+lifecycle.
 
-## 5. First Provider: Claude Code
+## 5. Runtime Modes
 
-Claude Code is the first supported provider.
+### Local Unsafe
 
-Initial implementation path:
-
-```text
-worker
-  -> claude-agent-sdk
-    -> ClaudeSDKClient
-      -> Claude Code process
-        -> ANTHROPIC_BASE_URL / private model gateway
-```
-
-Important boundary:
-
-Claude Code / Claude Agent SDK does not provide an official standalone HTTP
-daemon. CLI Agent Proxy must provide the HTTP/SSE runtime service and use the
-SDK inside the worker.
-
-Claude Code provider must support:
-
-- session creation
-- streaming messages
-- interrupt
-- optional resume
-- model selection
-- workspace cwd
-- allowed/disallowed tools where supported
-- permission mode where supported
-- normalized event mapping
-
-Initial SDK support is documented in
-[claude-code-provider.md](claude-code-provider.md).
-
-## 6. Unified Provider Contract
-
-Each provider adapter must implement:
+Current implementation mode:
 
 ```text
-PrepareSession(ctx, spec) -> provider_session
-StartRun(ctx, message) -> event stream
-Interrupt(ctx)
-Close(ctx)
-GetCapabilities(ctx) -> capabilities
+FastAPI process
+  -> SessionManager
+    -> LocalUnsafeSandboxDriver
+      -> provider adapter in the same process
 ```
 
-Provider capabilities should include:
+This mode is useful for development and provider integration tests. It is not a
+security boundary and must not be described as production isolation.
 
-```json
-{
-  "provider": "claude-code",
-  "supports_streaming": true,
-  "supports_resume": true,
-  "supports_tools": true,
-  "supports_file_watch": true,
-  "supports_approval": true,
-  "supports_model_switch": true
-}
+### Single-Node Production
+
+Target first production deployment:
+
+```text
+api container
+  -> sandbox manager container
+    -> Docker Engine
+      -> one provider runtime container per session
 ```
 
-Provider adapters must not expose raw provider-specific behavior directly to
-upper-layer products unless wrapped in a namespaced `raw` extension.
+Only the Sandbox Manager should have Docker authority. The public API container
+must not mount the Docker socket.
 
-## 7. Public API Draft
+### Kubernetes Production
 
-Initial stable API surface:
+Target large deployment:
+
+```text
+control plane deployment
+  -> sandbox manager/controller
+    -> one pod or job per session
+```
+
+Kubernetes deployments should use NetworkPolicies, Pod Security Admission,
+resource quotas, secret manager integration, and ephemeral or PVC-backed
+workspaces.
+
+## 6. Session Lifecycle
+
+```text
+create session
+  -> validate provider and policy
+  -> allocate server-owned workspace
+  -> resolve short-lived credentials
+  -> create sandbox
+  -> start provider runtime
+  -> report session ready
+  -> stream message runs
+  -> interrupt or complete
+  -> close session
+  -> revoke credentials
+  -> stop sandbox
+  -> delete or snapshot workspace
+```
+
+The lifecycle is the core product. Provider adapters are plugins inside that
+lifecycle.
+
+## 7. Code Boundaries
+
+Current code has these initial boundaries:
+
+- `main.py`: FastAPI route wiring.
+- `session_manager.py`: session state and serialization lock.
+- `sandbox/`: runtime boundary abstraction.
+- `providers/`: provider-specific SDK/CLI option mapping and event mapping.
+- `schemas.py`: public DTOs and event models.
+
+Planned production boundaries:
+
+- `control/`: session service, policy service, approval service.
+- `storage/`: session, run, event, approval, and audit repositories.
+- `runtime/`: internal protocol between control plane and sandbox runtimes.
+- `sandbox/docker.py`: Docker driver.
+- `sandbox/kubernetes.py`: Kubernetes driver.
+
+## 8. Public API Draft
+
+Initial API surface:
 
 ```http
 GET    /healthz
@@ -220,9 +232,15 @@ POST   /v1/sessions
 GET    /v1/sessions/{session_id}
 POST   /v1/sessions/{session_id}/messages:stream
 POST   /v1/sessions/{session_id}/interrupt
-POST   /v1/sessions/{session_id}/approvals/{approval_id}
 DELETE /v1/sessions/{session_id}
+```
+
+Planned API surface:
+
+```http
+POST   /v1/sessions/{session_id}/approvals/{approval_id}
 GET    /v1/sessions/{session_id}/events
+GET    /v1/sessions/{session_id}/workspace
 ```
 
 Create session example:
@@ -241,167 +259,92 @@ Create session example:
     "cwd": "/workspaces/project_001/conv_001",
     "env": {}
   },
-  "generation": {
-    "temperature": 0.2,
-    "top_p": 0.9,
-    "max_tokens": 4096
-  },
-  "workspace": {
-    "mode": "ephemeral"
+  "sandbox": {
+    "profile": "default",
+    "workspace_retention": "delete",
+    "timeout_seconds": 1800
   },
   "policy": {
     "execution_mode": "approve_edits",
     "filesystem": "workspace_only",
     "network": "deny_by_default",
     "allowed_hosts": ["model-gateway.internal"],
-    "allowed_tools": ["read", "write"],
-    "disallowed_tools": ["shell"]
+    "allowed_tools": ["Read", "Write"],
+    "disallowed_tools": ["Bash"]
   },
   "provider_options": {
     "resume": "previous-provider-session-id",
     "max_turns": 5
+  },
+  "metadata": {
+    "external_trace_id": "trace_001"
   }
 }
 ```
 
-Stream message endpoint returns `text/event-stream`.
+`metadata` is non-authoritative correlation data only. It must not control
+authorization, secret lookup, workspace allocation, provider options, or sandbox
+policy.
 
-## 8. Normalized Event Model
+## 9. Provider Contract
 
-Events must be append-only and sequence-numbered.
-
-Recommended base fields:
-
-```json
-{
-  "id": "evt_001",
-  "type": "message.delta",
-  "session_id": "sess_001",
-  "run_id": "run_001",
-  "provider": "claude-code",
-  "sequence": 12,
-  "timestamp": "2026-04-29T08:00:00Z",
-  "data": {}
-}
-```
-
-Initial event types:
-
-- `session.created`
-- `session.ready`
-- `run.started`
-- `message.delta`
-- `reasoning.delta`
-- `tool.call`
-- `tool.result`
-- `file.changed`
-- `approval.requested`
-- `approval.resolved`
-- `run.completed`
-- `run.failed`
-- `session.closed`
-- `raw.provider_event`
-
-Raw provider events may be exposed for debugging, but upper-layer integrations
-must not depend on raw event shape for stable product behavior.
-
-## 9. Isolation Security Model
-
-Minimum production requirements:
-
-- No privileged worker containers.
-- No host home directory mount.
-- No shared `~/.claude`, `~/.codex`, SSH keys, git credentials, or model tokens.
-- Workspace path is allocated server-side and validated.
-- Agent file access is workspace-only by default.
-- Network is deny-by-default with explicit allowlist.
-- Provider credentials are injected through secrets or model gateway, not
-  accepted from end-user request payloads.
-- Every shell command, file write, network request, approval, and provider error
-  should be auditable.
-- Session has idle timeout and hard timeout.
-- Worker has CPU, memory, disk, process count, and output size limits.
-- Dangerous actions should trigger approval workflow.
-
-Recommended production security boundary:
+Each provider adapter implements:
 
 ```text
-session
-  -> dedicated sandbox
-    -> dedicated workspace
-      -> short-lived credentials
+create_session(session_id, request)
+stream_message(session_id, message) -> event stream
+interrupt(session_id)
+close(session_id)
+capabilities() -> ProviderCapabilities
 ```
 
-Development mode may support local process execution, but it must be clearly
-marked unsafe for managed production.
+Provider adapters should only map provider-native options and provider-native
+events. They should not allocate host workspaces, read secrets directly from
+caller payloads, or decide sandbox lifecycle.
 
-## 10. Deployment Modes
+## 10. Security Model
 
-### Local Development
+Production minimums:
+
+- No privileged provider runtime containers.
+- No host home directory mounts.
+- No shared SSH keys, Git credentials, `~/.claude`, `~/.codex`, or model tokens.
+- Workspaces are allocated and validated server-side.
+- Network is deny-by-default with explicit allowlists.
+- Credentials are injected through secret references or model gateways.
+- Long-lived provider API keys are not accepted from end-user payloads.
+- Sessions have idle and hard timeouts.
+- Containers have CPU, memory, pids, disk, and output limits.
+- Dangerous actions flow through approvals.
+- Every run emits auditable events.
+
+Docker socket access is high risk. If used, it belongs only in an internal
+Sandbox Manager process, never in the public API process.
+
+## 11. First Provider: Claude Code
+
+Claude Code runs through the Python `claude-agent-sdk`.
 
 ```text
-api + worker in one process
-memory storage
-local process sandbox
+provider runtime
+  -> claude-agent-sdk
+    -> ClaudeSDKClient
+      -> Claude Code process
+        -> ANTHROPIC_BASE_URL / private model gateway
 ```
 
-### Single-Node Private Deployment
+Claude Code / Claude Agent SDK does not provide an official standalone HTTP
+daemon. CLI Agent Proxy provides the HTTP/SSE service and uses the SDK inside a
+runtime process.
 
-```text
-Docker Compose
-api container
-worker container
-Postgres or SQLite
-Redis optional
-per-session Docker sandbox
-internal model gateway
-```
+Details are documented in [claude-code-provider.md](claude-code-provider.md).
 
-### Kubernetes Private Deployment
-
-```text
-api deployment
-worker deployment
-Postgres
-Redis
-per-session pod/job sandbox
-network policies
-secret manager
-persistent volume or ephemeral volume workspaces
-```
-
-## 11. Storage Responsibilities
-
-Memory storage is allowed only for local development.
-
-Production storage should persist:
-
-- workspace and credential context
-- session records
-- run records
-- provider session ids
-- workspace metadata
-- event log
-- approval records
-- audit records
-- resource usage
-
-Secrets should not be stored in normal application tables.
-
-## 12. Relationship to Existing Open Source Tools
+## 12. Relationship To Existing Tools
 
 ### cc-connect
 
-cc-connect is a strong reference for:
-
-- broad provider support
-- session commands
-- hooks
-- multi-project concepts
-- web admin ideas
-- ACP support
-
-But cc-connect is primarily a chat bridge:
+cc-connect is a useful reference for broad agent support, hooks, commands,
+multi-project workflows, and ACP ideas. It is primarily a chat bridge:
 
 ```text
 IM/chat platform -> local AI coding agent
@@ -410,72 +353,71 @@ IM/chat platform -> local AI coding agent
 CLI Agent Proxy is a runtime gateway:
 
 ```text
-Application backend -> secure runtime API -> sandboxed agent provider
+application backend -> secure runtime API -> sandboxed agent session
 ```
 
-Therefore, cc-connect should be used as a reference for provider and UX ideas,
-not as the direct product base unless heavily refactored around strong runtime
-isolation.
+Use cc-connect as a source of provider and UX ideas, not as the core
+architecture unless it is heavily refactored around strong runtime isolation.
 
 ### CC Switch
 
-CC Switch is a configuration switcher and desktop management tool. It is useful
-for understanding provider configuration patterns, but it does not provide the
-runtime session API required by upper-layer products.
+CC Switch is useful for understanding provider configuration switching. It does
+not provide the managed session runtime API required by upper-layer products.
 
 ## 13. Roadmap
 
 ### v0.1
 
-- FastAPI proof of concept
-- Claude Code provider
-- session create/get/delete
-- SSE stream endpoint
-- memory storage
+- FastAPI proof of concept.
+- Claude Code provider.
+- Local unsafe sandbox driver.
+- Session create/get/delete.
+- SSE stream endpoint.
+- Provider capabilities endpoint.
 
 ### v0.2
 
-- normalized event schema
-- provider capabilities endpoint
-- persisted session/event storage
-- interrupt support
-- provider session resume metadata
+- Normalized durable event schema.
+- Session and event persistence.
+- Runtime mode configuration.
+- Policy validation.
+- Provider session resume metadata.
 
 ### v0.3
 
-- Docker sandbox driver
-- workspace allocator
-- per-session resource limits
-- audit log
+- Docker sandbox driver.
+- Workspace allocator.
+- Resource limits.
+- Secret resolver.
+- Audit log.
 
 ### v0.4
 
-- policy engine
-- approval API
-- network/filesystem/tool restrictions
-- security documentation and threat model
+- Approval API.
+- Network and filesystem enforcement.
+- Production hardening guide.
+- Docker Compose deployment.
 
 ### v0.5
 
-- Codex provider
-- generic CLI provider adapter interface
-- provider conformance tests
+- Codex provider.
+- Generic CLI provider conformance tests.
+- Provider runtime protocol hardening.
 
 ### v1.0
 
-- stable OpenAPI
-- SDK examples
-- Docker Compose and Helm deployment
-- production hardening guide
-- bamboo integration example
+- Stable OpenAPI.
+- SDK examples.
+- Helm chart.
+- Bamboo integration example.
 
-## 14. Design Decisions to Preserve
+## 14. Decisions To Preserve
 
 - Do not build only a Claude Code wrapper.
-- Do not let provider-specific raw messages become the public API.
-- Do not treat multi-session as equivalent to runtime isolation.
-- Do not let users pass arbitrary workspace paths in managed mode.
+- Do not treat provider permission modes as the primary security boundary.
+- Do not let raw provider messages become the stable public API.
+- Do not let callers choose arbitrary host workspaces in managed mode.
 - Do not inject long-lived provider credentials into agent sandboxes.
 - Do not default to permission bypass modes.
-- Do keep deployment offline-first and self-hosted.
-- Do keep provider support capability-driven.
+- Keep deployment offline-first and self-hosted.
+- Keep provider support capability-driven.

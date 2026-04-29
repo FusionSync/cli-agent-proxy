@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cli-agent-proxy"
 version = "0.1.0"
-description = "Unified HTTP/SSE runtime proxy for CLI coding agents."
+description = "Sandbox-first runtime gateway for CLI coding agents."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

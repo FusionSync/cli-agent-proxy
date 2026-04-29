@@ -4,12 +4,12 @@ Status: initial SDK support
 
 The `claude-code` provider is the first provider implemented by CLI Agent
 Proxy. It uses the Python `claude-agent-sdk` package and `ClaudeSDKClient`
-inside the worker process.
+inside the provider runtime process.
 
 ## Runtime Path
 
 ```text
-CLI Agent Proxy worker
+Sandbox runtime
   -> claude-agent-sdk
     -> ClaudeSDKClient
       -> Claude Code process
@@ -42,6 +42,7 @@ Standard DTO groups:
 - `runtime`
 - `generation`
 - `policy`
+- `sandbox`
 - `provider_options`
 
 Claude Code currently maps:
@@ -70,30 +71,33 @@ Backward-compatible flat fields still accepted during early development:
 - `disallowed_tools`
 - `env`
 
-Claude-specific metadata fields:
+Claude-specific provider options:
 
-- `metadata.resume`
-- `metadata.continue_conversation`
-- `metadata.max_turns`
-- `metadata.max_budget_usd`
-- `metadata.fallback_model`
-- `metadata.mcp_servers`
-- `metadata.cli_path`
-- `metadata.settings`
-- `metadata.add_dirs`
-- `metadata.extra_args`
-- `metadata.max_buffer_size`
-- `metadata.permission_prompt_tool_name`
-- `metadata.user`
-- `metadata.include_partial_messages`
-- `metadata.fork_session`
-- `metadata.setting_sources`
-- `metadata.skills`
-- `metadata.max_thinking_tokens`
-- `metadata.effort`
-- `metadata.output_format`
-- `metadata.enable_file_checkpointing`
-- `metadata.load_timeout_ms`
+- `provider_options.resume`
+- `provider_options.continue_conversation`
+- `provider_options.max_turns`
+- `provider_options.max_budget_usd`
+- `provider_options.fallback_model`
+- `provider_options.mcp_servers`
+- `provider_options.cli_path`
+- `provider_options.settings`
+- `provider_options.add_dirs`
+- `provider_options.extra_args`
+- `provider_options.max_buffer_size`
+- `provider_options.permission_prompt_tool_name`
+- `provider_options.user`
+- `provider_options.include_partial_messages`
+- `provider_options.fork_session`
+- `provider_options.setting_sources`
+- `provider_options.skills`
+- `provider_options.max_thinking_tokens`
+- `provider_options.effort`
+- `provider_options.output_format`
+- `provider_options.enable_file_checkpointing`
+- `provider_options.load_timeout_ms`
+
+`metadata` is not forwarded into Claude SDK options. It is only caller-side
+correlation data.
 
 Example:
 
@@ -115,6 +119,11 @@ Example:
     "temperature": 0.2,
     "top_p": 0.9,
     "max_tokens": 4096
+  },
+  "sandbox": {
+    "profile": "default",
+    "workspace_retention": "delete",
+    "timeout_seconds": 1800
   },
   "policy": {
     "execution_mode": "approve_edits",

@@ -83,7 +83,7 @@ async def test_claude_code_provider_builds_sdk_options_and_streams_normalized_ev
         allowed_tools=["Read"],
         disallowed_tools=["Bash"],
         env={"ANTHROPIC_BASE_URL": "http://model-gateway"},
-        metadata={
+        provider_options={
             "resume": "resume-session",
             "max_turns": 3,
             "fallback_model": "fallback-model",
@@ -195,6 +195,7 @@ async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options(
         },
         generation={"temperature": 0.2, "top_p": 0.9, "max_tokens": 4096},
         provider_options={"resume": "resume-id", "max_turns": 4},
+        metadata={"max_turns": 999},
     )
 
     await provider.create_session("session-structured", request)
