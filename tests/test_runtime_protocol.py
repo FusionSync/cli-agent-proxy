@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from aviary.runtime.protocol import RuntimeCommand, decode_event_line, encode_command
+from aviary.runtime.protocol import RuntimeCommand, decode_command_line, decode_event_line, encode_command
 from aviary.schemas import AgentEvent
 
 
@@ -51,3 +51,10 @@ def test_runtime_protocol_rejects_oversized_event_line():
 def test_runtime_command_rejects_unknown_type():
     with pytest.raises(ValidationError):
         RuntimeCommand(type="shell", session_id="session-1")
+
+
+def test_runtime_protocol_rejects_oversized_command_line():
+    oversized = "x" * (1024 * 1024 + 1)
+
+    with pytest.raises(ValueError):
+        decode_command_line(oversized)

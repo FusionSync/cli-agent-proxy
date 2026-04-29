@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from aviary.schemas import AgentEvent
 
 MAX_EVENT_LINE_BYTES = 1024 * 1024
+MAX_COMMAND_LINE_BYTES = 1024 * 1024
 
 
 class RuntimeCommand(BaseModel):
@@ -16,6 +17,24 @@ class RuntimeCommand(BaseModel):
 
 def encode_command(command: RuntimeCommand) -> str:
     payload = command.model_dump(mode="json")
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
+
+
+def decode_command_line(line: str) -> RuntimeCommand:
+    if len(line.encode()) > MAX_COMMAND_LINE_BYTES:
+        raise ValueError("runtime command line is too large")
+    try:
+        payload = json.loads(line)
+    except json.JSONDecodeError as exc:
+        raise ValueError("runtime command line is not valid JSON") from exc
+    try:
+        return RuntimeCommand.model_validate(payload)
+    except Exception as exc:
+        raise ValueError("runtime command line is not a valid RuntimeCommand") from exc
+
+
+def encode_event(event: AgentEvent) -> str:
+    payload = event.model_dump(mode="json")
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 

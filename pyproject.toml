@@ -32,6 +32,9 @@ Homepage = "https://github.com/FusionSync/aviary"
 Repository = "https://github.com/FusionSync/aviary"
 Documentation = "https://github.com/FusionSync/aviary/tree/main/docs"
 
+[project.scripts]
+aviary-runtime = "aviary.runtime.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

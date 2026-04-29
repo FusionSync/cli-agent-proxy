@@ -69,7 +69,7 @@ Aviary 还处于早期。Docker 托管边界已经开始落地，但 runtime ima
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | `SandboxDriver` 运行时边界 | 已实现 |
 | <img src="docs/assets/status-dev.svg" alt="开发中" width="82"> | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
-| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Docker runtime spec、JSONL protocol、CLI adapter | 已实现 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Docker runtime spec、JSONL protocol、CLI worker/adapter | 已实现 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Docker runtime image 和完整容器执行 | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Kubernetes pod/job driver | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | session/run/event/approval/audit 持久化 | 规划中 |

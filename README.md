@@ -74,7 +74,7 @@ image and full production deployment wiring are still planned.
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | `SandboxDriver` runtime boundary | Implemented |
 | <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `LocalUnsafeSandboxDriver` | Implemented, development only |
-| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Docker runtime spec, JSONL protocol, CLI adapter | Implemented |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Docker runtime spec, JSONL protocol, CLI worker/adapter | Implemented |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Docker runtime image and full container execution | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Kubernetes pod/job driver | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Persistent sessions, runs, events, approvals, audit | Planned |

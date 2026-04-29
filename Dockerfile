@@ -7,6 +7,7 @@ ENV AVIARY_HOST=0.0.0.0
 ENV AVIARY_PORT=9000
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
+ENV PATH="/app/.venv/bin:${PATH}"
 
 COPY --from=ghcr.io/astral-sh/uv:0.8.20 /uv /uvx /bin/
 

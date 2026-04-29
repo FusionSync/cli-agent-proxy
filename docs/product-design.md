@@ -175,8 +175,9 @@ The current code has started this path by implementing the Docker runtime
 specification boundary: server-owned workspace allocation, hardened
 `DockerContainerSpec`, managed policy guardrails, and a `DockerRuntimeClient`
 protocol. It also includes a Docker CLI runtime client with an injectable
-command runner. The actual Claude Code runtime image and full production
-deployment wiring are still planned.
+command runner plus a short-lived `aviary-runtime` CLI worker. The actual
+Claude Code runtime image and full production deployment wiring are still
+planned.
 
 ### Kubernetes Production
 
@@ -227,8 +228,7 @@ Planned production boundaries:
 
 - `control/`: session service, policy service, approval service.
 - `storage/`: session, run, event, approval, and audit repositories.
-- `runtime/`: internal JSONL protocol between sandbox manager and runtime
-  processes.
+- `runtime/`: internal JSONL protocol and container-side CLI worker.
 - `sandbox/docker.py`: Docker runtime spec driver and future engine adapter.
 - `sandbox/kubernetes.py`: Kubernetes driver.
 

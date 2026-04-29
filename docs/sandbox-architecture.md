@@ -161,6 +161,22 @@ AgentEvent line     <- runtime process
 bounded line size, and the Docker CLI adapter rejects events whose `session_id`
 does not match the active session.
 
+`aviary-runtime` is the container-side CLI worker for this protocol. The current
+MVP uses short-lived `docker exec` commands:
+
+```text
+aviary-runtime serve      # keep the container alive for docker exec commands
+aviary-runtime query      # read RuntimeCommand from stdin, stream AgentEvent JSONL
+aviary-runtime interrupt  # best-effort provider interrupt command
+aviary-runtime close      # best-effort provider close command
+aviary-runtime health     # readiness command
+```
+
+It is intentionally not a daemon. Each command is self-contained and receives
+its managed session context from `AVIARY_SESSION_ID`, `AVIARY_PROVIDER`,
+`AVIARY_WORKSPACE`, `AVIARY_MODEL`, `ANTHROPIC_BASE_URL`, and
+`AVIARY_API_KEY_REF`.
+
 The current code represents this boundary with `DockerRuntimeClient`:
 
 ```text
@@ -247,6 +263,7 @@ segments, and refuses to release paths outside its configured base directory.
 
 - Add Docker CLI adapter behind `DockerRuntimeClient`.
 - Add JSONL runtime protocol codec.
+- Add short-lived `aviary-runtime` CLI worker.
 - Add runtime container image for Claude Code.
 - Add isolated network creation.
 - Add secret resolver integration.
