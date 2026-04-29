@@ -8,9 +8,9 @@ from cli_agent_proxy.schemas import CreateSessionRequest, ProviderCapabilities, 
 from cli_agent_proxy.session_manager import SessionManager
 
 
-def create_app() -> FastAPI:
+def create_app(providers: dict[str, object] | None = None) -> FastAPI:
     manager = SessionManager(
-        providers={
+        providers=providers or {
             ClaudeCodeProvider.name: ClaudeCodeProvider(),
         }
     )

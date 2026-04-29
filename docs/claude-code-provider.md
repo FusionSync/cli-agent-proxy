@@ -19,18 +19,13 @@ CLI Agent Proxy worker
 Claude Code / Claude Agent SDK does not provide an official standalone HTTP
 daemon. CLI Agent Proxy provides the HTTP/SSE API and uses the SDK internally.
 
-## Development Fallback
+## Running Locally
 
-By default, the provider uses a mock fallback. This keeps unit tests and local
-API exploration independent from a live Claude Code runtime.
+The provider always uses the real Claude Agent SDK path. If the SDK, Claude Code
+runtime, credentials, model gateway, or workspace configuration is unavailable,
+the stream returns an `error` event instead of synthetic agent output.
 
-Enable real SDK execution explicitly:
-
-```bash
-export CLI_AGENT_PROXY_ENABLE_REAL_CLAUDE=1
-```
-
-Then start the API:
+Start the API:
 
 ```bash
 uv run uvicorn cli_agent_proxy.main:app --host 0.0.0.0 --port 9000

@@ -14,7 +14,7 @@ from cli_agent_proxy.providers.claude_code import ClaudeCodeProvider
 from cli_agent_proxy.schemas import CreateSessionRequest
 
 
-class FakeClaudeClient:
+class StubClaudeClient:
     def __init__(self, messages: list[object]) -> None:
         self.messages = messages
         self.connected = False
@@ -42,7 +42,7 @@ class FakeClaudeClient:
 @pytest.mark.asyncio
 async def test_claude_code_provider_builds_sdk_options_and_streams_normalized_events():
     captured_options = []
-    fake_client = FakeClaudeClient(
+    stub_client = StubClaudeClient(
         [
             AssistantMessage(
                 model="claude-test",
@@ -69,10 +69,10 @@ async def test_claude_code_provider_builds_sdk_options_and_streams_normalized_ev
 
     async def fake_factory(options):
         captured_options.append(options)
-        await fake_client.connect()
-        return fake_client
+        await stub_client.connect()
+        return stub_client
 
-    provider = ClaudeCodeProvider(enable_real_sdk=True, client_factory=fake_factory)
+    provider = ClaudeCodeProvider(client_factory=fake_factory)
     request = CreateSessionRequest(
         provider="claude-code",
         conversation_id="conv-1",
@@ -94,8 +94,8 @@ async def test_claude_code_provider_builds_sdk_options_and_streams_normalized_ev
 
     events = [event async for event in provider.stream_message("session-1", "inspect repo")]
 
-    assert fake_client.connected is True
-    assert fake_client.queries == [("inspect repo", "session-1")]
+    assert stub_client.connected is True
+    assert stub_client.queries == [("inspect repo", "session-1")]
     assert len(captured_options) == 1
     options = captured_options[0]
     assert options.model == "private-sonnet"
@@ -136,21 +136,21 @@ async def test_claude_code_provider_builds_sdk_options_and_streams_normalized_ev
 
 @pytest.mark.asyncio
 async def test_claude_code_provider_interrupts_and_closes_active_client():
-    fake_client = FakeClaudeClient([])
+    stub_client = StubClaudeClient([])
 
     async def fake_factory(options):
-        await fake_client.connect()
-        return fake_client
+        await stub_client.connect()
+        return stub_client
 
-    provider = ClaudeCodeProvider(enable_real_sdk=True, client_factory=fake_factory)
+    provider = ClaudeCodeProvider(client_factory=fake_factory)
     await provider.create_session("session-1", CreateSessionRequest(conversation_id="conv-1"))
     _ = [event async for event in provider.stream_message("session-1", "hello")]
 
     await provider.interrupt("session-1")
     await provider.close("session-1")
 
-    assert fake_client.interrupted is True
-    assert fake_client.disconnected is True
+    assert stub_client.interrupted is True
+    assert stub_client.disconnected is True
 
 
 def test_claude_code_provider_capabilities():
@@ -167,7 +167,7 @@ async def test_real_sdk_mode_returns_error_event_when_client_creation_fails():
     async def failing_factory(options):
         raise RuntimeError("sdk unavailable")
 
-    provider = ClaudeCodeProvider(enable_real_sdk=True, client_factory=failing_factory)
+    provider = ClaudeCodeProvider(client_factory=failing_factory)
     await provider.create_session("session-1", CreateSessionRequest(conversation_id="conv-1"))
 
     events = [event async for event in provider.stream_message("session-1", "hello")]

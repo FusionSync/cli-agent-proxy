@@ -1,10 +1,47 @@
 from fastapi.testclient import TestClient
 
 from cli_agent_proxy.main import create_app
+from cli_agent_proxy.providers.base import AgentProvider
+from cli_agent_proxy.schemas import AgentEvent, CreateSessionRequest, ProviderCapabilities, ProviderName
+
+
+class StubProvider(AgentProvider):
+    name = "claude-code"
+
+    async def create_session(self, session_id: str, request: CreateSessionRequest) -> None:
+        self.request = request
+
+    async def stream_message(self, session_id: str, message: str):
+        yield AgentEvent(type="start", session_id=session_id, conversation_id=self.request.conversation_id)
+        yield AgentEvent(
+            type="ai_chunk",
+            session_id=session_id,
+            conversation_id=self.request.conversation_id,
+            data={"content": message},
+        )
+        yield AgentEvent(type="end", session_id=session_id, conversation_id=self.request.conversation_id)
+
+    async def interrupt(self, session_id: str) -> None:
+        return None
+
+    async def close(self, session_id: str) -> None:
+        return None
+
+    def capabilities(self) -> ProviderCapabilities:
+        return ProviderCapabilities(
+            provider=ProviderName.CLAUDE_CODE,
+            supports_streaming=True,
+            supports_resume=True,
+            session_config_fields=["model"],
+        )
+
+
+def create_test_app():
+    return create_app(providers={StubProvider.name: StubProvider()})
 
 
 def test_healthz_returns_ok():
-    client = TestClient(create_app())
+    client = TestClient(create_test_app())
 
     response = client.get("/healthz")
 
@@ -13,7 +50,7 @@ def test_healthz_returns_ok():
 
 
 def test_create_and_get_session():
-    client = TestClient(create_app())
+    client = TestClient(create_test_app())
 
     create_response = client.post(
         "/v1/sessions",
@@ -37,7 +74,7 @@ def test_create_and_get_session():
 
 
 def test_provider_capabilities_endpoints():
-    client = TestClient(create_app())
+    client = TestClient(create_test_app())
 
     providers_response = client.get("/v1/providers")
     capabilities_response = client.get("/v1/providers/claude-code/capabilities")
@@ -53,7 +90,7 @@ def test_provider_capabilities_endpoints():
 
 
 def test_stream_message_returns_sse_events():
-    client = TestClient(create_app())
+    client = TestClient(create_test_app())
     session = client.post(
         "/v1/sessions",
         json={"provider": "claude-code", "conversation_id": "conv-002"},
@@ -73,7 +110,7 @@ def test_stream_message_returns_sse_events():
 
 
 def test_close_session_removes_it():
-    client = TestClient(create_app())
+    client = TestClient(create_test_app())
     session = client.post(
         "/v1/sessions",
         json={"provider": "claude-code", "conversation_id": "conv-003"},

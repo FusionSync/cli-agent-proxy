@@ -328,7 +328,6 @@ marked unsafe for SaaS production.
 api + worker in one process
 memory storage
 local process sandbox
-mock provider fallback
 ```
 
 ### Single-Node Private Deployment
@@ -418,7 +417,6 @@ runtime session API required by SaaS products.
 - session create/get/delete
 - SSE stream endpoint
 - memory storage
-- mock fallback for development
 
 ### v0.2
 

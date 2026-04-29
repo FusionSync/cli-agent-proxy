@@ -1,6 +1,5 @@
 from collections.abc import AsyncIterator
 from collections.abc import Awaitable, Callable
-import os
 from typing import Any
 
 from cli_agent_proxy.providers.base import AgentProvider
@@ -12,11 +11,10 @@ ClaudeClientFactory = Callable[[Any], Awaitable[Any]]
 class ClaudeCodeProvider(AgentProvider):
     name = ProviderName.CLAUDE_CODE.value
 
-    def __init__(self, *, enable_real_sdk: bool | None = None, client_factory: ClaudeClientFactory | None = None) -> None:
+    def __init__(self, *, client_factory: ClaudeClientFactory | None = None) -> None:
         self._clients: dict[str, Any] = {}
         self._requests: dict[str, CreateSessionRequest] = {}
         self._client_factory = client_factory
-        self._enable_real_sdk = enable_real_sdk if enable_real_sdk is not None else os.getenv("CLI_AGENT_PROXY_ENABLE_REAL_CLAUDE") == "1"
 
     async def create_session(self, session_id: str, request: CreateSessionRequest) -> None:
         self._requests[session_id] = request
@@ -40,22 +38,6 @@ class ClaudeCodeProvider(AgentProvider):
                 data={"detail": str(exc)},
             )
             return
-        if client is None:
-            # Development fallback keeps the API testable without a live Claude Code binary.
-            yield AgentEvent(
-                type="ai_chunk",
-                session_id=session_id,
-                conversation_id=request.conversation_id,
-                data={"content": f"[mock claude-code] {message}"},
-            )
-            yield AgentEvent(
-                type="end",
-                session_id=session_id,
-                conversation_id=request.conversation_id,
-                data={"provider_session_id": None},
-            )
-            return
-
         await client.query(message, session_id=session_id)
         async for sdk_message in client.receive_messages():
             for event in self._map_sdk_message(session_id, request.conversation_id, sdk_message):
@@ -76,15 +58,10 @@ class ClaudeCodeProvider(AgentProvider):
         if session_id in self._clients:
             return self._clients[session_id]
 
-        if not self._enable_real_sdk and self._client_factory is None:
-            return None
-
         try:
             from claude_agent_sdk import ClaudeSDKClient
         except Exception as exc:
-            if self._enable_real_sdk or self._client_factory is not None:
-                raise RuntimeError(f"claude-agent-sdk is not available: {exc}") from exc
-            return None
+            raise RuntimeError(f"claude-agent-sdk is not available: {exc}") from exc
 
         options = self._build_options(session_id, request)
         if self._client_factory is not None:

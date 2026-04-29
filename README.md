@@ -80,11 +80,6 @@ Planned next:
 - production policy and approval model
 - production Claude Code process hardening
 
-By default, the Claude Code provider uses a mock fallback so the project can be
-tested without a local Claude Code runtime. Set
-`CLI_AGENT_PROXY_ENABLE_REAL_CLAUDE=1` to enable real Claude Agent SDK
-connection attempts.
-
 ## Architecture
 
 Production architecture is designed around a Control Plane and Worker Plane:
