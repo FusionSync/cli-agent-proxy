@@ -11,8 +11,13 @@ provider-specific options:
 ```json
 {
   "provider": "claude-code",
-  "tenant_id": "tenant_001",
-  "user_id": "user_001",
+  "scope": {
+    "type": "project",
+    "id": "project_001",
+    "labels": {
+      "owner": "team-a"
+    }
+  },
   "conversation_id": "conv_001",
   "model": {},
   "runtime": {},
@@ -21,6 +26,29 @@ provider-specific options:
   "provider_options": {}
 }
 ```
+
+## ScopeConfig
+
+```json
+{
+  "type": "project",
+  "id": "project_001",
+  "labels": {
+    "owner": "team-a",
+    "environment": "private"
+  }
+}
+```
+
+`scope` describes the execution boundary or ownership context. It is deliberately
+generic: it can represent a project, workspace, organization, tenant, personal
+context, CI job, or any other boundary chosen by the embedding product.
+
+Fields:
+
+- `type`: boundary type, e.g. `personal`, `project`, `workspace`, `org`, `tenant`.
+- `id`: boundary identifier.
+- `labels`: optional metadata for audit, routing, quotas, or policy selection.
 
 ## ModelConfig
 
@@ -41,8 +69,8 @@ Fields:
 ```json
 {
   "base_url": "http://model-gateway.internal",
-  "api_key_ref": "tenant_001/anthropic",
-  "cwd": "/workspaces/tenant_001/conv_001",
+  "api_key_ref": "project_001/anthropic",
+  "cwd": "/workspaces/project_001/conv_001",
   "env": {}
 }
 ```
@@ -54,7 +82,7 @@ Fields:
 - `cwd`: working directory allocated by the runtime.
 - `env`: additional provider environment variables.
 
-Production SaaS deployments should resolve `api_key_ref` server-side and should
+Production managed deployments should resolve `api_key_ref` server-side and should
 not accept raw provider API keys from end users.
 
 ## GenerationConfig

@@ -181,7 +181,7 @@ async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options(
         model={"name": "private-sonnet", "fallback": "private-haiku"},
         runtime={
             "base_url": "http://model-gateway",
-            "api_key_ref": "tenant/anthropic",
+            "api_key_ref": "project/anthropic",
             "cwd": "/tmp/structured",
             "env": {"EXTRA": "1"},
         },
@@ -209,7 +209,7 @@ async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options(
     assert options.disallowed_tools == ["Bash"]
     assert options.env == {
         "ANTHROPIC_BASE_URL": "http://model-gateway",
-        "CLI_AGENT_PROXY_API_KEY_REF": "tenant/anthropic",
+        "CLI_AGENT_PROXY_API_KEY_REF": "project/anthropic",
         "EXTRA": "1",
     }
     assert options.resume == "resume-id"

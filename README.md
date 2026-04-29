@@ -3,7 +3,7 @@
 **One secure API for sandboxed coding agents.**
 
 CLI Agent Proxy is an offline-first, self-hosted runtime gateway for Agent and
-CLI-agent systems. It lets SaaS products and private deployments run Claude Code
+CLI-agent systems. It lets upper-layer products and private deployments run Claude Code
 first, then Codex, Gemini CLI, OpenCode, ACP-compatible agents, and future
 coding agents through one consistent Session, Message, Event, Approval, and
 Workspace API.
@@ -23,14 +23,14 @@ has a different runtime model:
 - Claude Code uses the Claude Agent SDK and its own session/process model.
 - Codex, Gemini CLI, OpenCode, and other tools expose different CLI or protocol
   behaviors.
-- SaaS platforms need tenant isolation, auditability, policy, quotas, approval
+- Platforms need scope isolation, auditability, policy, quotas, approval
   gates, and private deployment.
 
 CLI Agent Proxy provides a runtime interface layer so upper-layer products do
 not need to directly integrate every agent vendor.
 
 ```text
-SaaS product / bamboo / private Agent platform
+Application backend / bamboo / private Agent platform
   -> CLI Agent Proxy unified runtime API
     -> sandboxed provider adapters
       -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
@@ -42,7 +42,7 @@ CLI Agent Proxy is:
 
 - **Offline-first**: designed for private cloud, intranet, Docker Compose, and
   Kubernetes deployments.
-- **SaaS-oriented**: treats `tenant_id`, `user_id`, `session_id`, and
+- **Platform-oriented**: treats `scope`, `session_id`, and
   `workspace_id` as first-class concepts.
 - **Provider-neutral**: starts with Claude Code, but the contract is designed
   for many Agent and CLI Agent providers.
@@ -85,7 +85,7 @@ Planned next:
 Production architecture is designed around a Control Plane and Worker Plane:
 
 ```text
-Client / bamboo / SaaS backend / ChatOps adapter
+Client / bamboo / Application backend / ChatOps adapter
         |
         | HTTP API / SSE / WebSocket
         v
@@ -93,7 +93,7 @@ Control Plane
   - OpenAPI
   - auth integration hooks
   - session registry
-  - tenant policy
+  - scope policy
   - provider routing
   - workspace allocation
   - audit log
@@ -156,8 +156,8 @@ POST /v1/sessions
   },
   "runtime": {
     "base_url": "http://model-gateway:8080",
-    "api_key_ref": "tenant-a/anthropic",
-    "cwd": "/workspaces/tenant-a/bamboo-conv-001",
+    "api_key_ref": "project-a/anthropic",
+    "cwd": "/workspaces/project-a/bamboo-conv-001",
     "env": {}
   },
   "generation": {
@@ -254,7 +254,7 @@ docker run --rm -p 9000:9000 cli-agent-proxy
 
 ## Security Defaults We Intend To Preserve
 
-- Do not allow arbitrary `cwd` in SaaS mode; allocate and validate workspaces
+- Do not allow arbitrary `cwd` in managed mode; allocate and validate workspaces
   server-side.
 - Do not accept user-supplied provider API keys; inject credentials through
   secrets or an internal model gateway.

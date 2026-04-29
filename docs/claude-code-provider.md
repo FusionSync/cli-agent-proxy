@@ -107,8 +107,8 @@ Example:
   },
   "runtime": {
     "base_url": "http://model-gateway.internal",
-    "api_key_ref": "tenant/anthropic",
-    "cwd": "/workspaces/tenant-a/conv_001",
+    "api_key_ref": "project/anthropic",
+    "cwd": "/workspaces/project-a/conv_001",
     "env": {}
   },
   "generation": {
@@ -178,4 +178,4 @@ Current declared capabilities:
 - model switch
 
 Some capabilities require sandbox and policy layers before they are safe for
-SaaS production use.
+managed production use.

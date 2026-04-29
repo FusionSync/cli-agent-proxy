@@ -76,10 +76,15 @@ class ProviderOptionSupport(BaseModel):
     notes: str | None = None
 
 
+class ScopeConfig(BaseModel):
+    type: str | None = Field(default=None, description="Context boundary type, e.g. personal, project, org, tenant, workspace.")
+    id: str | None = Field(default=None, description="Context boundary identifier.")
+    labels: dict[str, str] = Field(default_factory=dict, description="Optional context labels for audit, routing, or quota.")
+
+
 class CreateSessionRequest(BaseModel):
     provider: ProviderName = Field(default=ProviderName.CLAUDE_CODE)
-    tenant_id: str | None = Field(default=None, description="SaaS tenant identifier.")
-    user_id: str | None = Field(default=None, description="End-user identifier within the tenant.")
+    scope: ScopeConfig = Field(default_factory=ScopeConfig)
     conversation_id: str = Field(..., min_length=1)
 
     model: ModelConfig = Field(default_factory=ModelConfig)

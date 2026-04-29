@@ -8,7 +8,7 @@ Last updated: 2026-04-29
 CLI Agent Proxy is an offline-first, self-hosted runtime gateway for agent and
 CLI-agent systems.
 
-It provides one secure API for SaaS products and private deployments to run
+It provides one secure API for upper-layer products and private deployments to run
 Claude Code first, then Codex, Gemini CLI, OpenCode, ACP-compatible agents, and
 future coding agents through a consistent session, message, event, approval, and
 workspace interface.
@@ -20,7 +20,7 @@ Engineering name: `cli-agent-proxy`
 Positioning:
 
 ```text
-Upper-layer Agent products / SaaS platforms
+Upper-layer Agent products / platforms
   -> CLI Agent Proxy unified runtime API
     -> provider adapters
       -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
@@ -33,7 +33,7 @@ CLI Agent Proxy is not:
 - A model gateway. It may call a model gateway, but does not primarily provide
   LLM completion APIs.
 - A chat platform bridge like cc-connect. ChatOps adapters can be built on top,
-  but the core API is for SaaS/backend integration.
+  but the core API is for managed platform/backend integration.
 - A config switcher like CC Switch. Provider configuration is part of runtime
   execution, not the main product.
 - A single-user local desktop helper.
@@ -53,13 +53,13 @@ No public control plane is required. Telemetry must be disabled by default or
 absent. All dependencies required for production operation must have offline or
 self-hosted alternatives.
 
-### SaaS-Safe Multi-Tenancy
+### Scope-Safe Isolation
 
-The primary use case is SaaS vendors embedding third-party agent runtimes into
+The primary use case is platform builders embedding third-party agent runtimes into
 their own upper-layer Agent products.
 
-`tenant_id`, `user_id`, `session_id`, and `workspace_id` are first-class
-concepts. A session must not access another tenant's files, credentials,
+`scope`, `session_id`, and `workspace_id` are first-class
+concepts. A session must not access another scope's files, credentials,
 processes, model tokens, or network resources.
 
 Default security boundary:
@@ -93,14 +93,14 @@ identical behavior.
 
 The runtime output is a durable event stream, not only final text.
 
-Upper-layer SaaS products need to observe, persist, audit, interrupt, replay,
+Upper-layer upper-layer products need to observe, persist, audit, interrupt, replay,
 and display the run process. Provider-specific messages must be normalized into
 a stable event schema.
 
 ## 4. Reference Architecture
 
 ```text
-Client / bamboo / SaaS backend / ChatOps adapter
+Client / bamboo / Application backend / ChatOps adapter
         |
         | HTTP API / SSE / WebSocket
         v
@@ -108,7 +108,7 @@ Control Plane
   - OpenAPI
   - auth integration hooks
   - session registry
-  - tenant policy
+  - scope policy
   - provider routing
   - workspace allocation
   - audit log
@@ -229,9 +229,14 @@ Create session example:
 
 ```json
 {
-  "tenant_id": "tenant_001",
-  "user_id": "user_001",
   "provider": "claude-code",
+  "scope": {
+    "type": "project",
+    "id": "project_001",
+    "labels": {
+      "owner": "team-a"
+    }
+  },
   "conversation_id": "conv_001",
   "model": {
     "name": "private-sonnet",
@@ -239,8 +244,8 @@ Create session example:
   },
   "runtime": {
     "base_url": "http://model-gateway.internal",
-    "api_key_ref": "tenant_001/anthropic",
-    "cwd": "/workspaces/tenant_001/conv_001",
+    "api_key_ref": "project_001/anthropic",
+    "cwd": "/workspaces/project_001/conv_001",
     "env": {}
   },
   "generation": {
@@ -280,8 +285,10 @@ Recommended base fields:
   "type": "message.delta",
   "session_id": "sess_001",
   "run_id": "run_001",
-  "tenant_id": "tenant_001",
-  "user_id": "user_001",
+  "scope": {
+    "type": "project",
+    "id": "project_001"
+  },
   "provider": "claude-code",
   "sequence": 12,
   "timestamp": "2026-04-29T08:00:00Z",
@@ -309,7 +316,7 @@ Initial event types:
 Raw provider events may be exposed for debugging, but upper-layer integrations
 must not depend on raw event shape for stable product behavior.
 
-## 9. SaaS Security Model
+## 9. Isolation Security Model
 
 Minimum production requirements:
 
@@ -330,14 +337,14 @@ Minimum production requirements:
 Recommended production security boundary:
 
 ```text
-tenant session
+scope session
   -> dedicated sandbox
     -> dedicated workspace
       -> short-lived credentials
 ```
 
 Development mode may support local process execution, but it must be clearly
-marked unsafe for SaaS production.
+marked unsafe for managed production.
 
 ## 10. Deployment Modes
 
@@ -380,7 +387,7 @@ Memory storage is allowed only for local development.
 
 Production storage should persist:
 
-- tenant and user identifiers
+- scope and user identifiers
 - session records
 - run records
 - provider session ids
@@ -411,21 +418,21 @@ But cc-connect is primarily a chat bridge:
 IM/chat platform -> local AI coding agent
 ```
 
-CLI Agent Proxy is a SaaS/runtime gateway:
+CLI Agent Proxy is a runtime gateway:
 
 ```text
-SaaS backend -> secure runtime API -> sandboxed agent provider
+Application backend -> secure runtime API -> sandboxed agent provider
 ```
 
 Therefore, cc-connect should be used as a reference for provider and UX ideas,
-not as the direct product base unless heavily refactored around SaaS tenant
+not as the direct product base unless heavily refactored around strong scope
 isolation.
 
 ### CC Switch
 
 CC Switch is a configuration switcher and desktop management tool. It is useful
 for understanding provider configuration patterns, but it does not provide the
-runtime session API required by SaaS products.
+runtime session API required by upper-layer products.
 
 ## 13. Roadmap
 
@@ -477,8 +484,8 @@ runtime session API required by SaaS products.
 
 - Do not build only a Claude Code wrapper.
 - Do not let provider-specific raw messages become the public API.
-- Do not treat multi-session as equivalent to multi-tenant security.
-- Do not let users pass arbitrary workspace paths in SaaS mode.
+- Do not treat multi-session as equivalent to multi-scope security.
+- Do not let users pass arbitrary workspace paths in managed mode.
 - Do not inject long-lived provider credentials into agent sandboxes.
 - Do not default to permission bypass modes.
 - Do keep deployment offline-first and self-hosted.
