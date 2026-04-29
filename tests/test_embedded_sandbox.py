@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 import pytest
 
 from aviary.providers.base import AgentProvider
+from aviary.sandbox.embedded import EmbeddedSandboxDriver
 from aviary.sandbox.local_unsafe import LocalUnsafeSandboxDriver
 from aviary.schemas import (
     AgentEvent,
@@ -11,6 +12,10 @@ from aviary.schemas import (
     ProviderName,
     StreamMessageRequest,
 )
+
+
+def test_local_unsafe_import_path_is_legacy_alias():
+    assert LocalUnsafeSandboxDriver is EmbeddedSandboxDriver
 
 
 class RecordingProvider(AgentProvider):
@@ -42,9 +47,9 @@ class RecordingProvider(AgentProvider):
 
 
 @pytest.mark.asyncio
-async def test_local_unsafe_sandbox_delegates_provider_lifecycle():
+async def test_embedded_sandbox_delegates_provider_lifecycle():
     provider = RecordingProvider()
-    driver = LocalUnsafeSandboxDriver(providers={provider.name: provider})
+    driver = EmbeddedSandboxDriver(providers={provider.name: provider})
     request = CreateSessionRequest(provider="claude-code")
 
     await driver.create_session("session-1", request)

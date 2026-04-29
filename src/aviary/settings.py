@@ -11,29 +11,40 @@ from aviary.providers.claude_code import ClaudeCodeProvider
 from aviary.sandbox.base import SandboxDriver
 from aviary.sandbox.docker import DockerSandboxDriver, DockerSandboxProfile
 from aviary.sandbox.docker_cli import DockerCliRuntimeClient
-from aviary.sandbox.local_unsafe import LocalUnsafeSandboxDriver
+from aviary.sandbox.embedded import EmbeddedSandboxDriver
 from aviary.sandbox.workspace import LocalWorkspaceAllocator
 
 
 class SandboxMode(str, Enum):
+    EMBEDDED = "embedded"
+    MANAGED_CONTAINER = "managed-container"
     LOCAL_UNSAFE = "local-unsafe"
     DOCKER_CLI = "docker-cli"
 
 
+_SANDBOX_MODE_ALIASES = {
+    SandboxMode.LOCAL_UNSAFE: SandboxMode.EMBEDDED,
+    SandboxMode.DOCKER_CLI: SandboxMode.MANAGED_CONTAINER,
+}
+
+
 @dataclass(frozen=True)
 class AviarySettings:
-    sandbox_mode: SandboxMode = SandboxMode.LOCAL_UNSAFE
+    sandbox_mode: SandboxMode | str = SandboxMode.EMBEDDED
     workspace_base_path: Path | None = None
     docker_binary: str = "docker"
     docker_container_prefix: str = "aviary"
     docker_runtime_image: str = "ghcr.io/fusionsync/aviary-claude-code-runtime:latest"
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sandbox_mode", normalize_sandbox_mode(self.sandbox_mode))
+
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "AviarySettings":
         source = environ if environ is not None else os.environ
-        mode_value = source.get("AVIARY_SANDBOX_MODE", SandboxMode.LOCAL_UNSAFE.value)
+        mode_value = source.get("AVIARY_SANDBOX_MODE", SandboxMode.EMBEDDED.value)
         try:
-            sandbox_mode = SandboxMode(mode_value)
+            sandbox_mode = normalize_sandbox_mode(SandboxMode(mode_value))
         except ValueError as exc:
             raise ValueError(f"unsupported AVIARY_SANDBOX_MODE: {mode_value}") from exc
 
@@ -54,15 +65,21 @@ def default_provider_registry() -> dict[str, AgentProvider]:
     return {ClaudeCodeProvider.name: ClaudeCodeProvider()}
 
 
+def normalize_sandbox_mode(mode: SandboxMode | str) -> SandboxMode:
+    parsed_mode = mode if isinstance(mode, SandboxMode) else SandboxMode(mode)
+    return _SANDBOX_MODE_ALIASES.get(parsed_mode, parsed_mode)
+
+
 def build_sandbox_driver(
     settings: AviarySettings,
     *,
     providers: dict[str, AgentProvider],
 ) -> SandboxDriver:
-    if settings.sandbox_mode == SandboxMode.LOCAL_UNSAFE:
-        return LocalUnsafeSandboxDriver(providers=providers)
+    sandbox_mode = normalize_sandbox_mode(settings.sandbox_mode)
+    if sandbox_mode == SandboxMode.EMBEDDED:
+        return EmbeddedSandboxDriver(providers=providers)
 
-    if settings.sandbox_mode == SandboxMode.DOCKER_CLI:
+    if sandbox_mode == SandboxMode.MANAGED_CONTAINER:
         runtime_client = DockerCliRuntimeClient(
             docker_binary=settings.docker_binary,
             container_prefix=settings.docker_container_prefix,
@@ -76,4 +93,4 @@ def build_sandbox_driver(
             profiles={"default": profile},
         )
 
-    raise ValueError(f"unsupported sandbox mode: {settings.sandbox_mode}")
+    raise ValueError(f"unsupported sandbox mode: {sandbox_mode}")

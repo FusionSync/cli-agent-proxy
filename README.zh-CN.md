@@ -57,7 +57,7 @@ Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provid
 
 ## 当前状态
 
-Aviary 还处于早期。Docker 托管边界已经开始落地，但 runtime image 和完整生产部署接线仍在规划中。
+Aviary 还处于早期。当前 embedded Claude Code 路径会在 Aviary 服务容器内运行。按会话隔离的 managed container 边界已经开始落地，但 runtime image 和完整生产部署接线仍在规划中。
 
 | 阶段 | 模块 | 状态 |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ Aviary 还处于早期。Docker 托管边界已经开始落地，但 runtime ima
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Provider capabilities endpoint | 已实现 |
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | `SandboxDriver` 运行时边界 | 已实现 |
-| <img src="docs/assets/status-dev.svg" alt="开发中" width="82"> | `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
+| <img src="docs/assets/status-dev.svg" alt="开发中" width="82"> | `EmbeddedSandboxDriver` | 已实现，适合本地和可信单租户部署 |
 | <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Docker runtime spec、JSONL protocol、CLI worker/adapter | 已实现 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Docker runtime image 和完整容器执行 | 规划中 |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | Kubernetes pod/job driver | 规划中 |
@@ -88,14 +88,16 @@ uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 运行模式需要显式选择：
 
 ```bash
-# 默认：仅开发使用，Provider 在 API 进程内运行
-AVIARY_SANDBOX_MODE=local-unsafe
+# 默认：Provider 在 Aviary 服务容器/进程内运行
+AVIARY_SANDBOX_MODE=embedded
 
-# Docker CLI 托管路径，需要 sandbox manager 上下文具备 Docker 权限
-AVIARY_SANDBOX_MODE=docker-cli
+# 托管路径：每个 session 一个独立 Provider runtime 容器
+AVIARY_SANDBOX_MODE=managed-container
 AVIARY_WORKSPACE_BASE_PATH=/var/lib/aviary/workspaces
 AVIARY_DOCKER_RUNTIME_IMAGE=ghcr.io/fusionsync/aviary-claude-code-runtime:latest
 ```
+
+早期配置值 `local-unsafe` 和 `docker-cli` 仍会作为兼容 alias 被接受。新部署请使用 `embedded` 和 `managed-container`。
 
 ## 架构
 
@@ -116,12 +118,12 @@ Aviary 拆出三个边界：
 ```text
 FastAPI
   -> SessionManager
-    -> LocalUnsafeSandboxDriver
+    -> EmbeddedSandboxDriver
       -> ClaudeCodeProvider
         -> claude-agent-sdk
 ```
 
-`LocalUnsafeSandboxDriver` 的名字故意带有 unsafe，因为它会在 API 进程内运行 Provider adapter。它是开发模式，不是生产隔离方案。
+`EmbeddedSandboxDriver` 会在 Aviary 服务容器/进程内运行 Provider adapter。如果 Aviary 本身部署在 Docker 中，Claude Code 能访问的就是这个服务容器能访问的内容：挂载工作区、环境变量、网络和凭证。它适合本地开发和可信单租户私有化部署，但不是多租户 SaaS 的按会话隔离边界。
 
 ## 会话生命周期
 
@@ -265,7 +267,7 @@ control plane deployment
 
 | 阶段 | Milestone | Focus |
 | --- | --- | --- |
-| <img src="docs/assets/status-now.svg" alt="当前" width="82"> | `v0.1` | Claude Code proof of concept、local unsafe sandbox driver、SSE stream、memory storage |
+| <img src="docs/assets/status-now.svg" alt="当前" width="82"> | `v0.1` | Claude Code proof of concept、embedded runtime driver、SSE stream、memory storage |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
 | <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.4` | approval API、network/filesystem enforcement、Docker Compose |

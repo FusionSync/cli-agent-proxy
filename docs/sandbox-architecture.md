@@ -53,11 +53,11 @@ get_provider_capabilities(provider)
 
 Current drivers:
 
-- `LocalUnsafeSandboxDriver`: development only, provider runs in the API
-  process.
+- `EmbeddedSandboxDriver`: provider runs inside the Aviary service
+  process/container.
 - `DockerSandboxDriver`: implemented as the managed runtime specification
   boundary. It allocates server-owned workspaces, builds hardened container
-  specs, validates unsafe managed policies, and delegates execution to a
+  specs, validates high-risk managed policies, and delegates execution to a
   `DockerRuntimeClient`.
 
 Future drivers:
@@ -66,28 +66,33 @@ Future drivers:
 - hardened container runtimes such as gVisor, Kata, or Firecracker-backed
   workers.
 
-## 4. Local Unsafe Driver
+## 4. Embedded Driver
 
-`LocalUnsafeSandboxDriver` intentionally keeps the original fast development
-path:
+`EmbeddedSandboxDriver` intentionally keeps the original fast development and
+trusted single-tenant private deployment path:
 
 ```text
 FastAPI
   -> SessionManager
-    -> LocalUnsafeSandboxDriver
+    -> EmbeddedSandboxDriver
       -> ClaudeCodeProvider
         -> claude-agent-sdk
 ```
 
-It is named unsafe because it is not an isolation layer. It should not be used
-as the managed production runtime.
+It runs provider adapters inside the Aviary service process/container. If the
+Aviary service itself runs in Docker, Claude Code is confined by that service
+container's mounts, environment, network, and credentials. This is not
+per-session isolation and should not be used as the multi-tenant SaaS runtime.
 
 Runtime mode is configured with `AVIARY_SANDBOX_MODE`:
 
-- `local-unsafe`: default developer mode. Provider adapters run inside the API
-  process.
-- `docker-cli`: managed Docker CLI mode. `create_app()` wires
+- `embedded`: default mode. Provider adapters run inside the Aviary service
+  process/container.
+- `managed-container`: managed container mode. `create_app()` wires
   `DockerSandboxDriver` to `DockerCliRuntimeClient`.
+
+Legacy values `local-unsafe` and `docker-cli` are accepted as aliases for early
+configurations, but they should not be used in new documentation or examples.
 
 Related Docker settings:
 
@@ -96,8 +101,15 @@ Related Docker settings:
 - `AVIARY_DOCKER_CONTAINER_PREFIX`
 - `AVIARY_DOCKER_RUNTIME_IMAGE`
 
-`docker-cli` must be enabled deliberately. It should run in a sandbox manager
-context, not in a public API container with a blindly mounted Docker socket.
+`managed-container` must be enabled deliberately. Docker authority should live
+in a sandbox manager context, not in a public API container with a blindly
+mounted Docker socket.
+
+Claude Code permission modes and Agent SDK `SandboxSettings` are provider-native
+inner controls. Aviary treats them as defense-in-depth, not as the primary
+session boundary. In `embedded` mode, the outer boundary is the Aviary service
+container itself. In `managed-container` mode, the outer boundary is the
+per-session runtime container, and Claude Code controls run inside it.
 
 ## 5. Docker Driver Target
 
@@ -251,7 +263,7 @@ Workspace handling should be server-owned:
 
 - allocate workspace path or volume server-side
 - mount only that workspace into the provider runtime
-- validate any caller-supplied path in local unsafe mode only
+- validate any caller-supplied path in embedded mode only
 - delete, snapshot, or keep workspace according to `sandbox.workspace_retention`
 - keep retention policy independent from provider behavior
 
@@ -264,9 +276,9 @@ segments, and refuses to release paths outside its configured base directory.
 ### Phase 1: Boundary Refactor
 
 - Introduce `SandboxDriver`.
-- Move provider execution behind `LocalUnsafeSandboxDriver`.
+- Move provider execution behind `EmbeddedSandboxDriver`.
 - Keep current FastAPI and test flow working.
-- Document local unsafe mode clearly.
+- Document embedded mode clearly.
 
 ### Phase 2A: Docker Runtime Spec Boundary
 
@@ -274,7 +286,7 @@ segments, and refuses to release paths outside its configured base directory.
 - Add workspace allocator.
 - Add hardened `DockerContainerSpec`.
 - Add runtime client protocol.
-- Add policy guardrails for unsafe managed modes.
+- Add policy guardrails for high-risk managed modes.
 
 ### Phase 2B: Docker Engine Runtime
 

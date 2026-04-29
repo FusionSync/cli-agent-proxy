@@ -61,8 +61,9 @@ one backend API without forcing your product to integrate each CLI directly.
 
 ## Current Status
 
-Aviary is early. The managed Docker boundary is taking shape, but the runtime
-image and full production deployment wiring are still planned.
+Aviary is early. The embedded Claude Code path runs inside the Aviary service
+container today. The managed per-session container boundary is taking shape,
+but the runtime image and full production deployment wiring are still planned.
 
 | Stage | Area | Status |
 | --- | --- | --- |
@@ -73,7 +74,7 @@ image and full production deployment wiring are still planned.
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Provider capabilities endpoint | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | `SandboxDriver` runtime boundary | Implemented |
-| <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `LocalUnsafeSandboxDriver` | Implemented, development only |
+| <img src="docs/assets/status-dev.svg" alt="Dev" width="82"> | `EmbeddedSandboxDriver` | Implemented for local and trusted single-tenant deployments |
 | <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Docker runtime spec, JSONL protocol, CLI worker/adapter | Implemented |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Docker runtime image and full container execution | Planned |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | Kubernetes pod/job driver | Planned |
@@ -95,14 +96,18 @@ uv run uvicorn aviary.main:app --reload --host 0.0.0.0 --port 9000
 Runtime mode is explicit:
 
 ```bash
-# default: development only, provider runs inside the API process
-AVIARY_SANDBOX_MODE=local-unsafe
+# default: provider runs inside the Aviary service container/process
+AVIARY_SANDBOX_MODE=embedded
 
-# managed Docker CLI path, requires Docker access in the sandbox manager context
-AVIARY_SANDBOX_MODE=docker-cli
+# managed path: one provider runtime container per session
+AVIARY_SANDBOX_MODE=managed-container
 AVIARY_WORKSPACE_BASE_PATH=/var/lib/aviary/workspaces
 AVIARY_DOCKER_RUNTIME_IMAGE=ghcr.io/fusionsync/aviary-claude-code-runtime:latest
 ```
+
+Legacy values `local-unsafe` and `docker-cli` are still accepted as aliases for
+early adopters, but new deployments should use `embedded` and
+`managed-container`.
 
 ## Architecture
 
@@ -123,13 +128,17 @@ Current development path:
 ```text
 FastAPI
   -> SessionManager
-    -> LocalUnsafeSandboxDriver
+    -> EmbeddedSandboxDriver
       -> ClaudeCodeProvider
         -> claude-agent-sdk
 ```
 
-`LocalUnsafeSandboxDriver` is intentionally named unsafe. It runs provider
-adapters in the API process and is not a production isolation boundary.
+`EmbeddedSandboxDriver` runs provider adapters in the Aviary service
+container/process. If Aviary itself is deployed in Docker, this means Claude
+Code can access what that container can access: mounted workspaces, env vars,
+network routes, and credentials. This is acceptable for local development and
+trusted single-tenant private deployments. It is not per-session isolation for
+multi-tenant SaaS.
 
 ## Session Lifecycle
 
@@ -282,7 +291,7 @@ control plane deployment
 
 | Phase | Milestone | Focus |
 | --- | --- | --- |
-| <img src="docs/assets/status-now.svg" alt="Now" width="82"> | `v0.1` | Claude Code proof of concept, local unsafe sandbox driver, SSE stream, memory storage |
+| <img src="docs/assets/status-now.svg" alt="Now" width="82"> | `v0.1` | Claude Code proof of concept, embedded runtime driver, SSE stream, memory storage |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
 | <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |

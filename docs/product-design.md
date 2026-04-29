@@ -120,7 +120,7 @@ Sandbox Manager
   - interrupt and kill escalation
   - event forwarding
         |
-        | Docker / Kubernetes / local unsafe
+        | Docker / Kubernetes / embedded
         v
 Provider Runtime Sandbox
   - one runtime per session
@@ -137,29 +137,36 @@ Agent Provider
   - acp
 ```
 
-The Control Plane must not run untrusted provider SDKs in production. It should
-own policy and routing, while the Sandbox Manager owns process and container
-lifecycle.
+For multi-tenant production, the Control Plane must not run untrusted provider
+SDKs directly. It should own policy and routing, while the Sandbox Manager owns
+process and container lifecycle.
 
 ## 5. Runtime Modes
 
-### Local Unsafe
+### Embedded
 
 Current implementation mode:
 
 ```text
-FastAPI process
+FastAPI process or Aviary service container
   -> SessionManager
-    -> LocalUnsafeSandboxDriver
-      -> provider adapter in the same process
+    -> EmbeddedSandboxDriver
+      -> provider adapter in the same process/container
 ```
 
-This mode is useful for development and provider integration tests. It is not a
-security boundary and must not be described as production isolation.
+This mode is useful for local development, provider integration tests, and
+trusted single-tenant private deployments where the Aviary container is already
+the deployment boundary. It is not per-session isolation and must not be
+described as a multi-tenant production sandbox.
 
-The default `AVIARY_SANDBOX_MODE` is `local-unsafe` so contributors can run the
-project without Docker. Managed deployments must opt into a sandbox mode
-explicitly.
+The default `AVIARY_SANDBOX_MODE` is `embedded` so contributors and private
+deployments can run the project without a nested runtime manager. Multi-tenant
+deployments must opt into a managed runtime mode explicitly.
+
+Provider-native controls such as Claude Code permission modes and Agent SDK
+`SandboxSettings` are inner controls. Aviary policy may map to them, but they do
+not replace the runtime boundary that owns session isolation, credentials, and
+workspace lifecycle.
 
 ### Single-Node Production
 
@@ -183,9 +190,10 @@ command runner plus a short-lived `aviary-runtime` CLI worker. The actual
 Claude Code runtime image and full production deployment wiring are still
 planned.
 
-The first managed mode is `AVIARY_SANDBOX_MODE=docker-cli`. It wires the control
-plane to `DockerSandboxDriver` and `DockerCliRuntimeClient`; Docker authority
-should belong to a sandbox manager context, not a public API container.
+The first managed mode is `AVIARY_SANDBOX_MODE=managed-container`. It wires the
+control plane to `DockerSandboxDriver` and `DockerCliRuntimeClient`; Docker
+authority should belong to a sandbox manager context, not a public API
+container. The legacy value `docker-cli` is accepted as an alias only.
 
 ### Kubernetes Production
 
@@ -390,7 +398,7 @@ not provide the managed session runtime API required by upper-layer products.
 
 - FastAPI proof of concept.
 - Claude Code provider.
-- Local unsafe sandbox driver.
+- Embedded runtime driver.
 - Session create/get/delete.
 - SSE stream endpoint.
 - Provider capabilities endpoint.
