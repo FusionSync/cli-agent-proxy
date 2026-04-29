@@ -93,7 +93,7 @@ class ClaudeCodeProvider(AgentProvider):
         if request.runtime.base_url:
             env["ANTHROPIC_BASE_URL"] = request.runtime.base_url
         if request.runtime.api_key_ref:
-            env["CLI_AGENT_PROXY_API_KEY_REF"] = request.runtime.api_key_ref
+            env["AVIARY_API_KEY_REF"] = request.runtime.api_key_ref
 
         options_kwargs: dict[str, Any] = {"session_id": session_id}
         cwd = request.runtime.cwd or request.cwd
@@ -292,7 +292,7 @@ class ClaudeCodeProvider(AgentProvider):
                 "runtime": ProviderOptionSupport(
                     level=SupportLevel.PARTIAL,
                     fields=["base_url", "api_key_ref", "cwd", "env"],
-                    notes="base_url maps to ANTHROPIC_BASE_URL. api_key_ref is exposed as CLI_AGENT_PROXY_API_KEY_REF until secret resolution is implemented.",
+                    notes="base_url maps to ANTHROPIC_BASE_URL. api_key_ref is exposed as AVIARY_API_KEY_REF until secret resolution is implemented.",
                 ),
                 "generation": ProviderOptionSupport(
                     level=SupportLevel.UNSUPPORTED,

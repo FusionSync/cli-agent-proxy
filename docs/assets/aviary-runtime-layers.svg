@@ -1,0 +1,68 @@
+<svg width="1120" height="680" viewBox="0 0 1120 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1120" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111E"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <style>
+      .title { font: 800 34px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 500 16px Inter, ui-sans-serif, system-ui, sans-serif; fill: #B6C6D6; }
+      .layerTitle { font: 800 24px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .small { font: 600 14px Inter, ui-sans-serif, system-ui, sans-serif; fill: #CBD5E1; }
+      .muted { font: 500 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94A3B8; }
+      .pill { fill: rgba(15, 23, 42, .72); stroke: rgba(148, 163, 184, .32); stroke-width: 1; }
+      .cp { fill: rgba(14, 165, 233, .12); stroke: rgba(125, 211, 252, .58); }
+      .sm { fill: rgba(45, 212, 191, .12); stroke: rgba(94, 234, 212, .58); }
+      .pr { fill: rgba(167, 139, 250, .12); stroke: rgba(196, 181, 253, .58); }
+      .warn { fill: rgba(245, 158, 11, .12); stroke: rgba(251, 191, 36, .5); }
+      .arrow { stroke: #67E8F9; stroke-width: 2.2; stroke-linecap: round; marker-end: url(#arrowhead); }
+      .return { stroke: #34D399; stroke-width: 2; stroke-dasharray: 8 8; marker-end: url(#greenhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#67E8F9"/>
+    </marker>
+    <marker id="greenhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#34D399"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="680" rx="28" fill="url(#bg)"/>
+  <text x="56" y="62" class="title">Runtime layer boundaries</text>
+  <text x="56" y="92" class="subtitle">The public API controls sessions. Privileged runtime work stays behind the sandbox manager.</text>
+
+  <rect x="92" y="136" width="936" height="126" rx="24" class="cp"/>
+  <text x="126" y="178" class="layerTitle">Control Plane</text>
+  <text x="126" y="205" class="muted">Safe to expose to product backends</text>
+  <rect x="420" y="160" width="132" height="34" rx="12" class="pill"/><text x="446" y="182" class="small">Public API</text>
+  <rect x="568" y="160" width="154" height="34" rx="12" class="pill"/><text x="590" y="182" class="small">Session registry</text>
+  <rect x="738" y="160" width="152" height="34" rx="12" class="pill"/><text x="760" y="182" class="small">Policy checks</text>
+  <rect x="420" y="208" width="158" height="34" rx="12" class="pill"/><text x="442" y="230" class="small">Provider routing</text>
+  <rect x="594" y="208" width="184" height="34" rx="12" class="pill"/><text x="616" y="230" class="small">Events + approvals</text>
+
+  <rect x="92" y="314" width="936" height="126" rx="24" class="sm"/>
+  <text x="126" y="356" class="layerTitle">Sandbox Manager</text>
+  <text x="126" y="383" class="muted">Internal service with runtime authority</text>
+  <rect x="420" y="338" width="132" height="34" rx="12" class="pill"/><text x="444" y="360" class="small">Driver select</text>
+  <rect x="568" y="338" width="166" height="34" rx="12" class="pill"/><text x="590" y="360" class="small">Workspace alloc</text>
+  <rect x="750" y="338" width="146" height="34" rx="12" class="pill"/><text x="772" y="360" class="small">Secret inject</text>
+  <rect x="420" y="386" width="154" height="34" rx="12" class="pill"/><text x="442" y="408" class="small">Resource limits</text>
+  <rect x="590" y="386" width="190" height="34" rx="12" class="pill"/><text x="612" y="408" class="small">Interrupt + cleanup</text>
+
+  <rect x="92" y="492" width="936" height="126" rx="24" class="pr"/>
+  <text x="126" y="534" class="layerTitle">Provider Runtime Sandbox</text>
+  <text x="126" y="561" class="muted">One isolated runtime per managed session</text>
+  <rect x="420" y="516" width="150" height="34" rx="12" class="pill"/><text x="442" y="538" class="small">Provider adapter</text>
+  <rect x="586" y="516" width="154" height="34" rx="12" class="pill"/><text x="608" y="538" class="small">SDK / CLI process</text>
+  <rect x="756" y="516" width="182" height="34" rx="12" class="pill"/><text x="778" y="538" class="small">Event normalizer</text>
+  <rect x="420" y="564" width="132" height="34" rx="12" class="pill"/><text x="442" y="586" class="small">Claude Code</text>
+  <rect x="568" y="564" width="106" height="34" rx="12" class="pill"/><text x="590" y="586" class="small">Codex</text>
+  <rect x="690" y="564" width="122" height="34" rx="12" class="pill"/><text x="712" y="586" class="small">OpenCode</text>
+
+  <path d="M560 262V306" class="arrow"/>
+  <path d="M560 440V484" class="arrow"/>
+  <path d="M900 492C1010 420 1010 250 900 210" class="return"/>
+  <text x="910" y="350" class="muted">normalized events</text>
+
+  <rect x="92" y="634" width="936" height="30" rx="12" class="warn"/>
+  <text x="274" y="654" class="muted">Provider permission modes are defense-in-depth. Runtime isolation belongs outside the provider.</text>
+</svg>

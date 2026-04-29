@@ -50,7 +50,7 @@ Claude Code currently maps:
 - `model.name` -> `ClaudeAgentOptions.model`
 - `model.fallback` -> `ClaudeAgentOptions.fallback_model`
 - `runtime.base_url` -> `env.ANTHROPIC_BASE_URL`
-- `runtime.api_key_ref` -> `env.CLI_AGENT_PROXY_API_KEY_REF`
+- `runtime.api_key_ref` -> `env.AVIARY_API_KEY_REF`
 - `runtime.cwd` -> `ClaudeAgentOptions.cwd`
 - `runtime.env` -> `ClaudeAgentOptions.env`
 - `policy.execution_mode` -> `ClaudeAgentOptions.permission_mode`

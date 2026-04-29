@@ -1,22 +1,24 @@
 <h1 align="center">Aviary</h1>
 
 <p align="center">
-  <strong>面向 CLI Coding Agent 的沙箱优先 Runtime Gateway。</strong>
+  <strong>面向 CLI Coding Agent 的自托管运行时后端。</strong>
 </p>
 
 <p align="center">
-  把 Claude Code、Codex、Gemini CLI、OpenCode、ACP 兼容 Agent，以及后续更多 CLI Agent，
-  包装成可托管、可隔离、可审计、可私有化部署的后端运行时。
+  当前支持 Claude Code，后续面向 Codex、Gemini CLI、OpenCode、ACP 兼容 Agent 和更多 Provider，
+  通过一个 HTTP/SSE API 提供隔离工作区、策略控制、流式事件和私有化部署能力。
 </p>
 
 <p align="center">
   <a href="README.md">English README</a>
   ·
-  <a href="docs/product-design.md">产品设计</a>
+  <a href="#快速开始">快速开始</a>
   ·
-  <a href="docs/sandbox-architecture.md">沙箱架构</a>
+  <a href="#架构">架构</a>
   ·
-  <a href="docs/api-schema.md">API Schema</a>
+  <a href="#安全模型">安全模型</a>
+  ·
+  <a href="docs/product-design.md">设计文档</a>
 </p>
 
 <p align="center">
@@ -27,91 +29,35 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
-```text
-应用后端
-  -> Aviary 控制面 API
-    -> Sandbox Manager
-      -> 每个会话一个 Runtime Sandbox
-        -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
-```
+<p align="center">
+  <img src="docs/assets/aviary-system-map.svg" alt="Aviary system map">
+</p>
 
-## 一句话
+## Aviary 是什么？
 
-很多 Agent Server 的实现只是“在服务端拉起一个 CLI 进程，然后把输出流式返回”。
+Aviary 是给智能体产品、SaaS 后端、内部研发工具和 ChatOps 工作流使用的 Agent Runtime Backend。
 
-Aviary 的立场不同：
+它不是模型网关，也不是新的 Agent Framework。它做的是把不同 CLI Agent Provider 托管成可管理的运行时会话：
 
 ```text
 一个会话 -> 一个沙箱 -> 一个工作区 -> 一组短期凭证上下文
 ```
 
-Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provider、策略、工作区、模型网关和运行时 profile 可以共存在同一个后端接口之后。
+Aviary 不是单一牢笼，而是一组受管理的隔离生境：不同 Provider、策略、工作区、模型网关和运行时 profile 可以共存在同一个后端 API 之后。
 
-这个差异在 SaaS、多用户平台、私有化部署、离线部署、模型网关、审计、审批、工作区隔离、凭证隔离这些场景里非常关键。
+## 为什么需要 Aviary？
 
-## 为什么需要它
-
-Coding Agent 正在从本地开发工具变成基础设施。
-
-上层产品希望把 Claude Code、Codex、Gemini CLI、OpenCode 和协议型 Agent 嵌进自己的系统。但每个 Provider 都有自己的进程模型、权限模型、配置方式、事件流格式和会话生命周期。
-
-Aviary 要补的是中间那层 Runtime：
-
-| 问题 | Aviary 的方向 |
+| 如果你正在构建... | Aviary 提供... |
 | --- | --- |
-| 每家 Agent 都有不同接口 | 抽象统一的 Session、Message、Event、Policy、Sandbox 合约 |
-| Provider 会话难以安全托管 | 每个会话一个受管理的运行环境 |
-| SaaS 用户不能共享文件和密钥 | 工作区、凭证、进程、网络全部隔离 |
-| 私有化部署需要接内部模型网关 | 通过 `runtime.base_url` 和服务端 secret reference 接入 |
-| UI 不只需要最终文本 | 用标准 SSE 事件支持流式渲染、审计、回放、审批 |
-| Provider 能力差异很大 | 通过 capabilities 暴露支持程度，而不是假装完全一致 |
+| Coding Agent SaaS 后端 | Session、stream、interrupt、close、policy、provider routing API |
+| 私有化 Agent 平台 | 自托管运行时控制和私有模型网关接入 |
+| 多 Provider 智能体产品 | 通过 capabilities 暴露 Provider 支持程度，而不是硬编码假设 |
+| 安全工作区运行环境 | 以每个会话为单位的工作区和凭证边界 |
+| 可观测 Agent UI | 标准化 SSE 事件，用于 UI 流式渲染、审计、回放和审批 |
 
-## 架构观
+## 当前状态
 
-这个项目围绕三个边界设计。
-
-| 边界 | 负责 | 不应该负责 |
-| --- | --- | --- |
-| Control Plane | 公共 API、会话、策略校验、Provider 路由、事件持久化、审批状态 | Provider SDK 进程、Docker socket、原始密钥注入 |
-| Sandbox Manager | 沙箱生命周期、工作区分配、资源限制、密钥投递、清理、interrupt/kill 升级 | 上层产品 API 语义 |
-| Provider Runtime | Provider SDK 或 CLI 进程、Provider 参数映射、标准事件转换 | Host 工作区分配、授权判断、长期密钥管理 |
-
-目标生产架构：
-
-```text
-Client / product backend / ChatOps adapter
-        |
-        | HTTP API / SSE
-        v
-Control Plane
-  - OpenAPI surface
-  - session and run registry
-  - policy validation
-  - provider routing
-  - event and audit persistence
-        |
-        | internal runtime protocol
-        v
-Sandbox Manager
-  - Docker or Kubernetes driver
-  - workspace allocator
-  - secret resolver
-  - resource and timeout enforcement
-  - graceful interrupt, then kill escalation
-        |
-        | per-session sandbox
-        v
-Provider Runtime
-  - Claude Agent SDK / Codex CLI / Gemini CLI / OpenCode / ACP
-  - normalized event stream
-  - provider-native permissions as defense-in-depth
-```
-
-Provider 自带的 permission mode 很有价值，但它只能作为 defense-in-depth。真正的安全边界应该由外层容器、Pod 或更强的沙箱来承担。
-
-## 当前实现状态
-
-当前项目还处于早期，但核心架构切口已经建立。
+Aviary 还处于早期。核心运行时边界已经建立，但生产级 Docker/Kubernetes 沙箱 driver 仍在规划中。
 
 | 模块 | 状态 |
 | --- | --- |
@@ -121,25 +67,12 @@ Provider 自带的 permission mode 很有价值，但它只能作为 defense-in-
 | SSE 消息流 | 已实现 |
 | Provider capabilities endpoint | 已实现 |
 | model/runtime/generation/policy/sandbox/provider_options DTO | 已实现 |
-| `SandboxDriver` 边界 | 已实现 |
-| 开发用 `LocalUnsafeSandboxDriver` | 已实现 |
+| `SandboxDriver` 运行时边界 | 已实现 |
+| `LocalUnsafeSandboxDriver` | 已实现，仅开发使用 |
 | 每个 session 一个 Docker container | 规划中 |
-| session/run/event/approval/audit 持久化 | 规划中 |
-| secret resolver 和 workspace allocator | 规划中 |
-| Codex Provider | 规划中 |
 | Kubernetes pod/job driver | 规划中 |
-
-当前开发路径：
-
-```text
-FastAPI
-  -> SessionManager
-    -> LocalUnsafeSandboxDriver
-      -> ClaudeCodeProvider
-        -> claude-agent-sdk
-```
-
-`LocalUnsafeSandboxDriver` 的名字故意带有 unsafe，因为它会在 API 进程内运行 Provider adapter。它是开发模式，不是生产隔离方案。
+| session/run/event/approval/audit 持久化 | 规划中 |
+| Codex、Gemini CLI、OpenCode、ACP Provider | 规划中 |
 
 ## 快速开始
 
@@ -176,14 +109,12 @@ curl -s http://localhost:9000/v1/sessions \
     },
     "sandbox": {
       "profile": "default",
-      "workspace_retention": "delete",
       "timeout_seconds": 1800
     },
     "policy": {
       "execution_mode": "approve_edits",
       "filesystem": "workspace_only",
-      "network": "deny_by_default",
-      "allowed_hosts": ["model-gateway.internal"]
+      "network": "deny_by_default"
     }
   }'
 ```
@@ -193,8 +124,42 @@ curl -s http://localhost:9000/v1/sessions \
 ```bash
 curl -N -X POST http://localhost:9000/v1/sessions/<session_id>/messages:stream \
   -H 'content-type: application/json' \
-  -d '{"message":"Inspect this repository and summarize the architecture."}'
+  -d '{"message":"Inspect this repository and summarize the runtime architecture."}'
 ```
+
+## 架构
+
+<p align="center">
+  <img src="docs/assets/aviary-runtime-layers.svg" alt="Aviary runtime layer boundaries">
+</p>
+
+Aviary 拆出三个边界：
+
+| 边界 | 负责 | 不应该负责 |
+| --- | --- | --- |
+| Control Plane | 公共 API、会话注册、策略校验、Provider 路由、事件持久化、审批状态 | Provider SDK 进程、Docker socket、原始密钥注入 |
+| Sandbox Manager | 沙箱生命周期、工作区分配、资源限制、密钥投递、清理、interrupt/kill 升级 | 上层产品 API 语义 |
+| Provider Runtime | Provider SDK 或 CLI 进程、Provider 参数映射、标准事件转换 | Host 工作区分配、授权判断、长期密钥管理 |
+
+当前开发路径：
+
+```text
+FastAPI
+  -> SessionManager
+    -> LocalUnsafeSandboxDriver
+      -> ClaudeCodeProvider
+        -> claude-agent-sdk
+```
+
+`LocalUnsafeSandboxDriver` 的名字故意带有 unsafe，因为它会在 API 进程内运行 Provider adapter。它是开发模式，不是生产隔离方案。
+
+## 会话生命周期
+
+<p align="center">
+  <img src="docs/assets/aviary-session-lifecycle.svg" alt="Aviary session lifecycle">
+</p>
+
+Aviary 的核心不是一次 prompt-response，而是完整会话生命周期：策略校验、工作区分配、短期凭证注入、Provider Runtime 启动、标准事件流、中断、关闭和清理。
 
 ## API 预览
 
@@ -205,7 +170,7 @@ GET /v1/providers
 GET /v1/providers/{provider}/capabilities
 ```
 
-Capabilities 用来告诉客户端某个 Provider 对字段的支持程度。比如 `generation.temperature`、`policy.execution_mode`、`model.fallback` 不应该被默认假设为所有 Provider 都支持。
+Capabilities 用来告诉客户端某个 Provider 对字段的支持程度。比如 Claude Code 当前支持模型选择和 provider-specific options，但不直接支持 `temperature` 这类 generation control。
 
 ### 创建会话
 
@@ -232,20 +197,13 @@ POST /v1/sessions
     "workspace_retention": "delete",
     "timeout_seconds": 1800
   },
-  "generation": {
-    "temperature": 0.2,
-    "top_p": 0.9,
-    "max_tokens": 4096
-  },
   "policy": {
     "execution_mode": "approve_edits",
     "allowed_tools": ["Read", "Write"],
     "disallowed_tools": ["Bash"],
     "filesystem": "workspace_only",
-    "network": "deny_by_default",
-    "allowed_hosts": ["model-gateway.internal"]
+    "network": "deny_by_default"
   },
-  "system_prompt": "You are Bamboo's coding agent.",
   "provider_options": {
     "resume": "previous-claude-session-id",
     "max_turns": 5,
@@ -288,42 +246,38 @@ POST   /v1/sessions/{session_id}/interrupt
 DELETE /v1/sessions/{session_id}
 ```
 
-## Claude Code First
+## 安全模型
 
-Claude Code 当前通过 Python `claude-agent-sdk` 接入。
+安全模型要比 Provider 自带 permission mode 更严格：
 
-```text
-Provider Runtime
-  -> claude-agent-sdk
-    -> ClaudeSDKClient
-      -> Claude Code process
-        -> ANTHROPIC_BASE_URL / private model gateway
-```
+- 公共 API 容器不能挂载 Docker socket。
+- Provider runtime 不应该 privileged 运行。
+- Host home、SSH keys、Git credentials、`~/.claude`、`~/.codex` 不能跨会话共享。
+- 不接受来自终端用户 payload 的原始 Provider API Key。
+- `runtime.api_key_ref` 应该解析到服务端 secret material。
+- managed mode 下 workspace 应由服务端分配和校验。
+- 网络策略默认 deny-by-default。
+- 权限 bypass mode 不能作为默认行为。
+- 生产使用前必须持久化事件和审计记录。
 
-Claude Code / Claude Agent SDK 不提供官方 standalone HTTP daemon。Aviary 提供 HTTP/SSE 服务，并在运行时边界内使用 SDK。
-
-Provider 细节：[docs/claude-code-provider.md](docs/claude-code-provider.md)
+Provider 自带 sandbox flag 和 permission mode 只能作为 defense-in-depth。主安全边界应该由运行时沙箱承担。
 
 ## 部署模型
 
-当前 Docker 镜像：
+当前本地/API 容器：
 
 ```bash
 docker build -t aviary .
 docker run --rm -p 9000:9000 aviary
 ```
 
-当前镜像以非 root 用户运行 API 服务。它还没有实现每个 session 一个 Docker container。
-
-目标 Docker 部署：
+目标单机部署：
 
 ```text
 api container
   -> internal sandbox manager container
     -> Docker Engine
-      -> provider runtime container for session A
-      -> provider runtime container for session B
-      -> provider runtime container for session C
+      -> provider runtime container per session
 ```
 
 目标 Kubernetes 部署：
@@ -336,20 +290,6 @@ control plane deployment
       -> secret manager
       -> ephemeral or PVC-backed workspace
 ```
-
-## 安全立场
-
-我们要保留的安全默认值：
-
-- 公共 API 容器不能挂载 Docker socket。
-- Provider runtime 不应该 privileged 运行。
-- Host home、SSH keys、Git credentials、`~/.claude`、`~/.codex` 不能跨会话共享。
-- 不接受来自终端用户 payload 的原始 Provider API Key。
-- `runtime.api_key_ref` 应该解析到服务端 secret material。
-- managed mode 下 workspace 应由服务端分配和校验。
-- 网络策略默认 deny-by-default。
-- 权限 bypass mode 不能作为默认行为。
-- 生产使用前必须持久化事件和审计记录。
 
 ## 路线图
 
@@ -370,6 +310,10 @@ control plane deployment
 | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime 生命周期、Driver、隔离模型 |
 | [API Schema](docs/api-schema.md) | DTO 分组和 Provider capability 模型 |
 | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK 映射和事件标准化 |
+
+## 参与贡献
+
+欢迎提交 issue 和 pull request。项目当前还在建立 Provider Runtime 边界，大型改动前建议先讨论设计。
 
 ## License
 

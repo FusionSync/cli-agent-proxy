@@ -1,22 +1,24 @@
 <h1 align="center">Aviary</h1>
 
 <p align="center">
-  <strong>Sandbox-first runtime gateway for CLI coding agents.</strong>
+  <strong>Self-hosted runtime backend for CLI coding agents.</strong>
 </p>
 
 <p align="center">
-  Turn Claude Code, Codex, Gemini CLI, OpenCode, ACP-compatible agents, and future CLI agents
-  into isolated backend runtimes behind one HTTP/SSE API.
+  Run Claude Code today, and Codex, Gemini CLI, OpenCode, ACP-compatible agents, and future providers next,
+  behind one HTTP/SSE API with isolated workspaces, policies, streaming events, and private deployment support.
 </p>
 
 <p align="center">
   <a href="README.zh-CN.md">Read in Simplified Chinese</a>
   |
-  <a href="docs/product-design.md">Product Design</a>
+  <a href="#quick-start">Quick Start</a>
   |
-  <a href="docs/sandbox-architecture.md">Sandbox Architecture</a>
+  <a href="#architecture">Architecture</a>
   |
-  <a href="docs/api-schema.md">API Schema</a>
+  <a href="#security-model">Security</a>
+  |
+  <a href="docs/product-design.md">Design</a>
 </p>
 
 <p align="center">
@@ -27,103 +29,40 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
-```text
-Application backend
-  -> Aviary control API
-    -> Sandbox Manager
-      -> per-session runtime sandbox
-        -> Claude Code / Codex / Gemini CLI / OpenCode / ACP / future agents
-```
+<p align="center">
+  <img src="docs/assets/aviary-system-map.svg" alt="Aviary system map">
+</p>
 
-## The Short Version
+## What Is Aviary?
 
-Most "agent server" integrations do one thing: start a CLI process and stream
-the output.
+Aviary is a backend runtime layer for teams building their own AI agent
+frontends, SaaS products, internal dev tools, or ChatOps workflows.
 
-Aviary takes a different stance:
+It does not try to become another model gateway or agent framework. It hosts
+CLI-agent providers as managed runtime sessions:
 
 ```text
-one session -> one sandbox -> one workspace -> one credential context
+one session -> one sandbox -> one workspace -> one short-lived credential context
 ```
 
-Aviary is not a single cage. It is a managed collection of isolated habitats:
-different providers, policies, workspaces, model gateways, and runtime profiles
-can coexist behind one backend API.
+Think of it as a managed aviary for agent runtimes: different providers,
+policies, workspaces, model gateways, and runtime profiles can coexist behind
+one backend API without forcing your product to integrate each CLI directly.
 
-That distinction matters when an upper-layer product needs to serve many users,
-run inside a private network, isolate workspaces, route private model gateways,
-record audit events, enforce approval policy, and shut everything down cleanly.
+## Why Aviary?
 
-## Why This Exists
-
-Coding agents are becoming infrastructure. They are no longer only local
-developer tools.
-
-Product teams want to embed Claude Code, Codex, Gemini CLI, OpenCode, and
-protocol-based agents inside their own systems. But every provider has a
-different process model, permission model, config surface, event stream, and
-session lifecycle.
-
-Aviary is the missing runtime layer between application backends and
-agent providers.
-
-| Problem | Aviary direction |
+| If you are building... | Aviary gives you... |
 | --- | --- |
-| Every agent has a different API | One Session, Message, Event, Policy, and Sandbox contract |
-| Provider sessions are hard to host safely | One managed runtime environment per session |
-| SaaS users must not share files or secrets | Workspace, credential, process, and network isolation |
-| Private deployments need model gateways | `runtime.base_url` and server-side secret references |
-| UI needs more than final text | Normalized SSE events for streaming, audit, replay, and approvals |
-| Providers evolve independently | Capability discovery instead of false feature parity |
+| A coding-agent SaaS backend | Session, stream, interrupt, close, policy, and provider routing APIs |
+| A private agent platform | Self-hosted runtime control with private model gateway support |
+| A multi-provider agent product | Capability discovery instead of hardcoded provider assumptions |
+| A secure workspace runtime | Per-session workspace and credential boundaries as the product direction |
+| An observable agent UI | Normalized SSE events for UI streaming, audit, replay, and approvals |
 
-## Architecture Doctrine
+## Current Status
 
-The project is built around three boundaries.
-
-| Boundary | Owns | Must not own |
-| --- | --- | --- |
-| Control Plane | Public API, sessions, policy validation, provider routing, event persistence, approvals | Provider SDK processes, Docker socket access, raw secret injection |
-| Sandbox Manager | Sandbox lifecycle, workspace allocation, resource limits, secret delivery, cleanup, interrupt escalation | Public product API semantics |
-| Provider Runtime | Provider SDK or CLI process, provider-native option mapping, normalized event mapping | Host workspace allocation, authorization, long-lived secrets |
-
-Production shape:
-
-```text
-Client / product backend / ChatOps adapter
-        |
-        | HTTP API / SSE
-        v
-Control Plane
-  - OpenAPI surface
-  - session and run registry
-  - policy validation
-  - provider routing
-  - event and audit persistence
-        |
-        | internal runtime protocol
-        v
-Sandbox Manager
-  - Docker or Kubernetes driver
-  - workspace allocator
-  - secret resolver
-  - resource and timeout enforcement
-  - graceful interrupt, then kill escalation
-        |
-        | per-session sandbox
-        v
-Provider Runtime
-  - Claude Agent SDK / Codex CLI / Gemini CLI / OpenCode / ACP
-  - normalized event stream
-  - provider-native permissions as defense-in-depth
-```
-
-Provider-native permission modes are useful. They are not the primary security
-boundary. In managed deployments, filesystem, network, process, and credential
-boundaries belong to the sandbox layer.
-
-## What Is Implemented Today
-
-This repository is early, but the architectural seam is already in place.
+Aviary is early. The core boundary is in place, but production sandbox drivers
+are still planned.
 
 | Area | Status |
 | --- | --- |
@@ -133,26 +72,12 @@ This repository is early, but the architectural seam is already in place.
 | Message streaming over SSE | Implemented |
 | Provider capabilities endpoint | Implemented |
 | DTO schema for model/runtime/generation/policy/sandbox/provider options | Implemented |
-| `SandboxDriver` boundary | Implemented |
-| `LocalUnsafeSandboxDriver` for development | Implemented |
+| `SandboxDriver` runtime boundary | Implemented |
+| `LocalUnsafeSandboxDriver` | Implemented, development only |
 | Docker one-container-per-session driver | Planned |
-| Persistent sessions, runs, events, approvals, audit | Planned |
-| Secret resolver and workspace allocator | Planned |
-| Codex provider | Planned |
 | Kubernetes pod/job driver | Planned |
-
-Current local development path:
-
-```text
-FastAPI
-  -> SessionManager
-    -> LocalUnsafeSandboxDriver
-      -> ClaudeCodeProvider
-        -> claude-agent-sdk
-```
-
-`LocalUnsafeSandboxDriver` intentionally says "unsafe" because it runs provider
-adapters in the API process. It is a development path, not production isolation.
+| Persistent sessions, runs, events, approvals, audit | Planned |
+| Codex, Gemini CLI, OpenCode, ACP providers | Planned |
 
 ## Quick Start
 
@@ -189,14 +114,12 @@ curl -s http://localhost:9000/v1/sessions \
     },
     "sandbox": {
       "profile": "default",
-      "workspace_retention": "delete",
       "timeout_seconds": 1800
     },
     "policy": {
       "execution_mode": "approve_edits",
       "filesystem": "workspace_only",
-      "network": "deny_by_default",
-      "allowed_hosts": ["model-gateway.internal"]
+      "network": "deny_by_default"
     }
   }'
 ```
@@ -206,8 +129,46 @@ Stream a message:
 ```bash
 curl -N -X POST http://localhost:9000/v1/sessions/<session_id>/messages:stream \
   -H 'content-type: application/json' \
-  -d '{"message":"Inspect this repository and summarize the architecture."}'
+  -d '{"message":"Inspect this repository and summarize the runtime architecture."}'
 ```
+
+## Architecture
+
+<p align="center">
+  <img src="docs/assets/aviary-runtime-layers.svg" alt="Aviary runtime layer boundaries">
+</p>
+
+Aviary separates three responsibilities:
+
+| Boundary | Owns | Must not own |
+| --- | --- | --- |
+| Control Plane | Public API, session registry, policy validation, provider routing, event persistence, approvals | Provider SDK processes, Docker socket access, raw secret injection |
+| Sandbox Manager | Sandbox lifecycle, workspace allocation, resource limits, secret delivery, cleanup, interrupt escalation | Public product API semantics |
+| Provider Runtime | Provider SDK or CLI process, provider-native option mapping, normalized event mapping | Host workspace allocation, authorization, long-lived secrets |
+
+Current development path:
+
+```text
+FastAPI
+  -> SessionManager
+    -> LocalUnsafeSandboxDriver
+      -> ClaudeCodeProvider
+        -> claude-agent-sdk
+```
+
+`LocalUnsafeSandboxDriver` is intentionally named unsafe. It runs provider
+adapters in the API process and is not a production isolation boundary.
+
+## Session Lifecycle
+
+<p align="center">
+  <img src="docs/assets/aviary-session-lifecycle.svg" alt="Aviary session lifecycle">
+</p>
+
+Aviary is designed around the full session lifecycle, not only prompt
+submission. The runtime must be able to validate policy, allocate workspace,
+inject short-lived credentials, start the provider runtime, stream normalized
+events, interrupt safely, and clean up the sandbox.
 
 ## API Preview
 
@@ -218,9 +179,9 @@ GET /v1/providers
 GET /v1/providers/{provider}/capabilities
 ```
 
-Capabilities let clients discover support levels before assuming a provider can
-honor a field such as `generation.temperature`, `policy.execution_mode`, or
-`model.fallback`.
+Capabilities tell clients what each provider can actually honor. For example,
+Claude Code currently supports model selection and provider-specific options,
+but direct generation controls such as `temperature` are declared unsupported.
 
 ### Create Session
 
@@ -247,20 +208,13 @@ POST /v1/sessions
     "workspace_retention": "delete",
     "timeout_seconds": 1800
   },
-  "generation": {
-    "temperature": 0.2,
-    "top_p": 0.9,
-    "max_tokens": 4096
-  },
   "policy": {
     "execution_mode": "approve_edits",
     "allowed_tools": ["Read", "Write"],
     "disallowed_tools": ["Bash"],
     "filesystem": "workspace_only",
-    "network": "deny_by_default",
-    "allowed_hosts": ["model-gateway.internal"]
+    "network": "deny_by_default"
   },
-  "system_prompt": "You are Bamboo's coding agent.",
   "provider_options": {
     "resume": "previous-claude-session-id",
     "max_turns": 5,
@@ -272,8 +226,8 @@ POST /v1/sessions
 }
 ```
 
-`metadata` is non-authoritative. It is never a security boundary, secret lookup
-key, workspace selector, or provider option source.
+`metadata` is correlation data only. It is not a security boundary, secret
+lookup key, workspace selector, or provider option source.
 
 ### Stream Message
 
@@ -304,45 +258,41 @@ POST   /v1/sessions/{session_id}/interrupt
 DELETE /v1/sessions/{session_id}
 ```
 
-## Claude Code First
+## Security Model
 
-Claude Code currently runs through the Python `claude-agent-sdk`.
+The security model is deliberately stricter than provider-native permission
+modes.
 
-```text
-Provider Runtime
-  -> claude-agent-sdk
-    -> ClaudeSDKClient
-      -> Claude Code process
-        -> ANTHROPIC_BASE_URL / private model gateway
-```
+- The public API container must not mount the Docker socket.
+- Provider runtimes should not run privileged.
+- Host home directories, SSH keys, Git credentials, `~/.claude`, and `~/.codex`
+  must not be shared across sessions.
+- Raw provider API keys should not be accepted from end-user payloads.
+- `runtime.api_key_ref` should resolve to server-side secret material.
+- Workspaces should be allocated and validated server-side in managed mode.
+- Network policy should be deny-by-default.
+- Permission bypass modes should not be default behavior.
+- Events and audit records should be persisted before production use.
 
-Claude Code / Claude Agent SDK does not provide a standalone HTTP daemon. CLI
-Agent Proxy provides the HTTP/SSE service and uses the SDK inside the runtime
-boundary.
-
-Provider details: [docs/claude-code-provider.md](docs/claude-code-provider.md)
+Provider-native sandbox flags are useful defense-in-depth. The primary security
+boundary belongs to the runtime sandbox.
 
 ## Deployment Model
 
-Current Docker image:
+Current local/API container:
 
 ```bash
 docker build -t aviary .
 docker run --rm -p 9000:9000 aviary
 ```
 
-The current image runs the API service as a non-root user. It does not yet
-create one Docker container per session.
-
-Target Docker deployment:
+Target single-node deployment:
 
 ```text
 api container
   -> internal sandbox manager container
     -> Docker Engine
-      -> provider runtime container for session A
-      -> provider runtime container for session B
-      -> provider runtime container for session C
+      -> provider runtime container per session
 ```
 
 Target Kubernetes deployment:
@@ -355,21 +305,6 @@ control plane deployment
       -> secret manager
       -> ephemeral or PVC-backed workspace
 ```
-
-## Security Posture
-
-Security defaults we intend to preserve:
-
-- The public API container must not mount the Docker socket.
-- Provider runtimes should not run privileged.
-- Host home directories, SSH keys, Git credentials, `~/.claude`, and `~/.codex`
-  must not be shared across sessions.
-- Raw provider API keys should not be accepted from end-user payloads.
-- `runtime.api_key_ref` should resolve to server-side secret material.
-- Workspaces should be allocated and validated server-side in managed mode.
-- Network policy should be deny-by-default.
-- Permission bypass modes should not be default behavior.
-- Events and audit records should be persisted before production use.
 
 ## Roadmap
 
@@ -390,6 +325,12 @@ Security defaults we intend to preserve:
 | [Sandbox Architecture](docs/sandbox-architecture.md) | Runtime lifecycle, drivers, isolation model |
 | [API Schema](docs/api-schema.md) | DTO groups and provider capability model |
 | [Claude Code Provider](docs/claude-code-provider.md) | Claude Agent SDK mapping and event normalization |
+
+## Contributing
+
+Issues and pull requests are welcome. The project is still establishing its
+provider runtime boundary, so design discussions are valuable before large
+implementation changes.
 
 ## License
 

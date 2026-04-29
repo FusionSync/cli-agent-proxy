@@ -210,7 +210,7 @@ async def test_claude_code_provider_maps_structured_session_dtos_to_sdk_options(
     assert options.disallowed_tools == ["Bash"]
     assert options.env == {
         "ANTHROPIC_BASE_URL": "http://model-gateway",
-        "CLI_AGENT_PROXY_API_KEY_REF": "project/anthropic",
+        "AVIARY_API_KEY_REF": "project/anthropic",
         "EXTRA": "1",
     }
     assert options.resume == "resume-id"

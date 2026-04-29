@@ -1,0 +1,60 @@
+<svg width="1120" height="430" viewBox="0 0 1120 430" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1120" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111E"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <style>
+      .title { font: 800 32px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 500 15px Inter, ui-sans-serif, system-ui, sans-serif; fill: #B6C6D6; }
+      .stepTitle { font: 800 15px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .stepText { font: 500 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #B6C6D6; }
+      .step { fill: rgba(15, 23, 42, .78); stroke: rgba(45, 212, 191, .45); stroke-width: 1.2; }
+      .run { fill: rgba(14, 165, 233, .14); stroke: rgba(125, 211, 252, .55); stroke-width: 1.2; }
+      .close { fill: rgba(167, 139, 250, .14); stroke: rgba(196, 181, 253, .55); stroke-width: 1.2; }
+      .arrow { stroke: #67E8F9; stroke-width: 2; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#67E8F9"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="430" rx="28" fill="url(#bg)"/>
+  <text x="56" y="62" class="title">Session lifecycle</text>
+  <text x="56" y="90" class="subtitle">Aviary manages the whole runtime habitat, not just one prompt-response call.</text>
+
+  <rect x="56" y="142" width="134" height="86" rx="18" class="step"/>
+  <text x="82" y="176" class="stepTitle">1. Request</text>
+  <text x="82" y="201" class="stepText">POST /sessions</text>
+
+  <rect x="222" y="142" width="134" height="86" rx="18" class="step"/>
+  <text x="248" y="176" class="stepTitle">2. Validate</text>
+  <text x="248" y="201" class="stepText">provider + policy</text>
+
+  <rect x="388" y="142" width="134" height="86" rx="18" class="step"/>
+  <text x="414" y="176" class="stepTitle">3. Allocate</text>
+  <text x="414" y="201" class="stepText">workspace + secret</text>
+
+  <rect x="554" y="142" width="134" height="86" rx="18" class="step"/>
+  <text x="580" y="176" class="stepTitle">4. Sandbox</text>
+  <text x="580" y="201" class="stepText">container or pod</text>
+
+  <rect x="720" y="142" width="134" height="86" rx="18" class="run"/>
+  <text x="746" y="176" class="stepTitle">5. Stream</text>
+  <text x="746" y="201" class="stepText">normalized events</text>
+
+  <rect x="886" y="142" width="134" height="86" rx="18" class="close"/>
+  <text x="912" y="176" class="stepTitle">6. Cleanup</text>
+  <text x="912" y="201" class="stepText">revoke + stop</text>
+
+  <path d="M190 185H214" class="arrow"/>
+  <path d="M356 185H380" class="arrow"/>
+  <path d="M522 185H546" class="arrow"/>
+  <path d="M688 185H712" class="arrow"/>
+  <path d="M854 185H878" class="arrow"/>
+
+  <rect x="164" y="286" width="792" height="72" rx="22" fill="rgba(15,23,42,.62)" stroke="rgba(148,163,184,.28)"/>
+  <text x="214" y="316" class="stepTitle">Runtime invariant</text>
+  <text x="214" y="342" class="stepText">one session -> one sandbox -> one workspace -> one short-lived credential context</text>
+  <text x="214" y="366" class="stepText">delete, snapshot, or keep workspace according to policy after the sandbox exits</text>
+</svg>
