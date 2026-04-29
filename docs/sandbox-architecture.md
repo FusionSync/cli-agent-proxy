@@ -38,6 +38,26 @@ session_id
 One session should not share runtime filesystem, process space, provider client
 state, or credentials with another session.
 
+### Multi-Agent Runtime Rule
+
+Multi-agent workflows must not be modeled as a shared execution pool. Planner,
+reviewer, operator, UI, and orchestration agents may coordinate through Aviary
+APIs, but each runtime session keeps its own sandbox, workspace, provider
+client state, and credential context.
+
+Approval broker, provider-native permission modes, and provider-native sandbox
+flags are inner controls. They are useful for workflow and defense-in-depth, but
+they do not replace the runtime sandbox. A brokered approval only answers a
+provider tool-permission callback; it does not enforce filesystem, process,
+network, or credential isolation.
+
+Skill injection follows the same trust model. `skills.sources` materializes
+server-approved local or S3-backed skill artifacts into the provider project.
+Skills are instruction and capability extensions, not trusted security plugins.
+Deployments that accept external skill sources should add source ownership,
+hash/signature verification, and retention/audit rules before enabling them for
+untrusted callers.
+
 ## 3. Driver Interface
 
 The codebase now exposes `SandboxDriver` as the runtime boundary:

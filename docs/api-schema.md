@@ -232,6 +232,11 @@ they are promoted into one of the standard DTO groups.
 Do not put provider-specific control fields in `metadata`; metadata is only for
 caller-side correlation.
 
+Treat `provider_options` as a privileged extension surface. Provider adapters
+must validate and allowlist fields such as MCP servers, CLI paths, settings,
+additional directories, and setting sources before they can affect runtime
+execution.
+
 ## Capability Support Levels
 
 Providers expose support levels through:
@@ -246,6 +251,12 @@ Support levels:
 - `partial`: provider supports some fields or requires additional runtime layers.
 - `unsupported`: provider does not support the DTO group.
 - `provider_specific`: fields are available only under `provider_options`.
+
+Capabilities are the routing contract for upper-layer agents. A planner or
+product backend should inspect capabilities before selecting a provider,
+showing UI controls, sending model/runtime/generation/policy fields, or
+assuming a provider can honor approvals, skills, resume, sandbox settings, or
+streaming event types.
 
 Example:
 

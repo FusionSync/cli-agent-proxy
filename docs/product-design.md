@@ -141,6 +141,40 @@ For multi-tenant production, the Control Plane must not run untrusted provider
 SDKs directly. It should own policy and routing, while the Sandbox Manager owns
 process and container lifecycle.
 
+### Multi-Agent Collaboration Architecture
+
+<p align="center">
+  <img src="assets/aviary-agent-collaboration.svg" alt="Aviary agent collaboration and capability surface">
+</p>
+
+Upper-layer product agents can coordinate by creating and driving one or more
+Aviary sessions. For example, a planner agent may create a coding session, a
+reviewer agent may inspect streamed events, and an operator agent may decide
+approval requests. These product agents are callers and policy decision makers;
+they are not trusted sandbox boundaries.
+
+The runtime isolation rule does not change in multi-agent workflows:
+
+```text
+one session -> one sandbox -> one workspace -> one short-lived credential context
+```
+
+Aviary should expose agent capabilities as explicit contracts:
+
+| Capability surface | Contract | Constraint |
+| --- | --- | --- |
+| Provider capability discovery | `GET /v1/providers/{provider}/capabilities` | Route work by actual provider support, not an assumed common denominator |
+| Session lifecycle | `POST /v1/sessions`, stream, interrupt, close | A session is the unit of runtime ownership and cleanup |
+| Approval brokerage | approval list and decision APIs | Converts interactive provider prompts into backend decisions; it is not a sandbox |
+| Skill materialization | `skills.sources` | Loads trusted instruction artifacts; it is not a trusted code plugin system |
+| Runtime mode | `embedded`, `managed-container` | Embedded is trusted single-tenant; managed containers are the production isolation path |
+
+`provider_options` is intentionally outside the standard DTO groups. It is a
+high-risk provider-specific extension surface because it can affect MCP
+servers, CLI paths, provider settings, additional directories, and other
+execution behavior. A production deployment should validate and allowlist these
+fields per provider and per runtime profile.
+
 ## 5. Runtime Modes
 
 ### Embedded
@@ -444,7 +478,7 @@ not provide the managed session runtime API required by upper-layer products.
 
 ### v0.4
 
-- Approval API.
+- Approval persistence and audit hooks.
 - Network and filesystem enforcement.
 - Production hardening guide.
 - Docker Compose deployment.

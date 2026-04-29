@@ -126,6 +126,29 @@ FastAPI
 
 `EmbeddedSandboxDriver` 会在 Aviary 服务容器/进程内运行 Provider adapter。如果 Aviary 本身部署在 Docker 中，Claude Code 能访问的就是这个服务容器能访问的内容：挂载工作区、环境变量、网络和凭证。它适合本地开发和可信单租户私有化部署，但不是多租户 SaaS 的按会话隔离边界。
 
+### 多 Agent 协作
+
+<p align="center">
+  <img src="docs/assets/aviary-agent-collaboration.svg" alt="Aviary agent collaboration and capability surface">
+</p>
+
+Aviary 面向的是已经拥有 planner、reviewer、operator、UI 或工作流 Agent 的产品团队。这些 Agent 把 Aviary 当作运行时后端调用，而不是被放进一个共享执行池。安全单元仍然是：
+
+```text
+一个会话 -> 一个沙箱 -> 一个工作区 -> 一组短期凭证上下文
+```
+
+### Agent 能力面
+
+| 能力面 | 合同 | 产品含义 |
+| --- | --- | --- |
+| <img src="docs/assets/tag-providers.svg" alt="Provider" width="124"> | `GET /v1/providers/{provider}/capabilities` | 按 Provider 实际支持程度路由，而不是靠硬编码假设 |
+| <img src="docs/assets/tag-runtime.svg" alt="Runtime" width="112"> | `POST /v1/sessions` / `DELETE /v1/sessions/{id}` | 一个 session 拥有一个 runtime 边界 |
+| <img src="docs/assets/tag-events.svg" alt="事件" width="96"> | `POST /v1/sessions/{id}/messages:stream` | SSE 用于 UI 流式渲染和回放；持久审计仍在规划 |
+| <img src="docs/assets/status-done.svg" alt="完成" width="82"> | Approval broker endpoints | 把 Provider 权限提示后端化；它不是沙箱 |
+| <img src="docs/assets/tag-design.svg" alt="设计" width="102"> | `skills.sources` | 物化可信 Skill 来源；Skill 不是安全插件系统 |
+| <img src="docs/assets/tag-isolation.svg" alt="隔离" width="116"> | `embedded` / `managed-container` | embedded 适合可信单租户；managed container 是生产隔离方向 |
+
 ## 会话生命周期
 
 <p align="center">
@@ -242,6 +265,8 @@ DELETE /v1/sessions/{session_id}
 - managed mode 下 workspace 应由服务端分配和校验。
 - 网络策略默认 deny-by-default。
 - 权限 bypass mode 不能作为默认行为。
+- Approval broker、Provider permission mode 和 Skills 都是内部控制，不是主隔离边界。
+- `provider_options` 是高权限扩展面，影响 CLI path、MCP servers、settings 或 extra directories 前必须按 Provider 校验。
 - 生产使用前必须持久化事件和审计记录。
 
 Provider 自带 sandbox flag 和 permission mode 只能作为 defense-in-depth。主安全边界应该由运行时沙箱承担。
@@ -282,7 +307,7 @@ control plane deployment
 | <img src="docs/assets/status-now.svg" alt="当前" width="82"> | `v0.1` | Claude Code proof of concept、embedded runtime driver、SSE stream、memory storage |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.2` | durable event schema、persisted sessions/runs/events、policy validation |
 | <img src="docs/assets/status-next.svg" alt="下一步" width="82"> | `v0.3` | Docker sandbox driver、workspace allocator、secret resolver、audit log |
-| <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.4` | approval API、network/filesystem enforcement、Docker Compose |
+| <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.4` | approval persistence、network/filesystem enforcement、Docker Compose |
 | <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v0.5` | Codex provider、provider conformance tests |
 | <img src="docs/assets/status-later.svg" alt="后续" width="82"> | `v1.0` | stable OpenAPI、SDK examples、Helm chart、production hardening guide |
 

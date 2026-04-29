@@ -141,6 +141,32 @@ network routes, and credentials. This is acceptable for local development and
 trusted single-tenant private deployments. It is not per-session isolation for
 multi-tenant SaaS.
 
+### Multi-Agent Collaboration
+
+<p align="center">
+  <img src="docs/assets/aviary-agent-collaboration.svg" alt="Aviary agent collaboration and capability surface">
+</p>
+
+Aviary is designed for product teams that already have their own planner,
+reviewer, operator, UI, or workflow agents. Those agents call Aviary as a
+runtime backend; they are not placed into one shared execution pool. The
+security unit remains:
+
+```text
+one session -> one sandbox -> one workspace -> one short-lived credential context
+```
+
+### Agent Capability Surface
+
+| Surface | Contract | Product meaning |
+| --- | --- | --- |
+| <img src="docs/assets/tag-providers.svg" alt="Providers" width="124"> | `GET /v1/providers/{provider}/capabilities` | Route by actual provider support, not assumptions |
+| <img src="docs/assets/tag-runtime.svg" alt="Runtime" width="112"> | `POST /v1/sessions` / `DELETE /v1/sessions/{id}` | One session owns one runtime boundary |
+| <img src="docs/assets/tag-events.svg" alt="Events" width="96"> | `POST /v1/sessions/{id}/messages:stream` | SSE events for UI streaming and replay; durable audit is still planned |
+| <img src="docs/assets/status-done.svg" alt="Done" width="82"> | Approval broker endpoints | Backendizes provider permission prompts; it is not a sandbox |
+| <img src="docs/assets/tag-design.svg" alt="Design" width="102"> | `skills.sources` | Materializes trusted skill sources; skills are not a security plugin system |
+| <img src="docs/assets/tag-isolation.svg" alt="Isolation" width="116"> | `embedded` / `managed-container` | Embedded is trusted single-tenant; managed containers are the production isolation path |
+
 ## Session Lifecycle
 
 <p align="center">
@@ -265,6 +291,11 @@ modes.
 - Workspaces should be allocated and validated server-side in managed mode.
 - Network policy should be deny-by-default.
 - Permission bypass modes should not be default behavior.
+- Approval broker, provider permission modes, and skills are inner controls,
+  not the primary isolation boundary.
+- `provider_options` is a privileged extension surface and should be validated
+  per provider before it can affect CLI paths, MCP servers, settings, or extra
+  directories.
 - Events and audit records should be persisted before production use.
 
 Provider-native sandbox flags are useful defense-in-depth. The primary security
@@ -306,7 +337,7 @@ control plane deployment
 | <img src="docs/assets/status-now.svg" alt="Now" width="82"> | `v0.1` | Claude Code proof of concept, embedded runtime driver, SSE stream, memory storage |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.2` | Durable event schema, persisted sessions/runs/events, policy validation |
 | <img src="docs/assets/status-next.svg" alt="Next" width="82"> | `v0.3` | Docker sandbox driver, workspace allocator, secret resolver, audit log |
-| <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.4` | Approval API, network/filesystem enforcement, Docker Compose |
+| <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.4` | Approval persistence, network/filesystem enforcement, Docker Compose |
 | <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v0.5` | Codex provider and provider conformance tests |
 | <img src="docs/assets/status-later.svg" alt="Later" width="82"> | `v1.0` | Stable OpenAPI, SDK examples, Helm chart, production hardening guide |
 

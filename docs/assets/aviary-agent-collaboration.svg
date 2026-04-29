@@ -1,0 +1,126 @@
+<svg width="1120" height="720" viewBox="0 0 1120 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1120" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111E"/>
+      <stop offset="0.46" stop-color="#0F2F3B"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="core" x1="378" y1="136" x2="742" y2="568" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-opacity="0.28"/>
+    </filter>
+    <style>
+      .title { font: 800 34px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 500 16px Inter, ui-sans-serif, system-ui, sans-serif; fill: #B6C6D6; }
+      .section { font: 800 18px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .label { font: 700 15px Inter, ui-sans-serif, system-ui, sans-serif; fill: #F8FAFC; }
+      .darkLabel { font: 800 16px Inter, ui-sans-serif, system-ui, sans-serif; fill: #052E2B; }
+      .small { font: 600 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #CBD5E1; }
+      .muted { font: 500 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94A3B8; }
+      .darkSmall { font: 700 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #075985; }
+      .card { fill: rgba(15, 23, 42, .76); stroke: rgba(148, 163, 184, .36); stroke-width: 1.2; }
+      .agent { fill: rgba(8, 17, 31, .74); stroke: rgba(45, 212, 191, .42); stroke-width: 1.2; }
+      .provider { fill: rgba(8, 17, 31, .74); stroke: rgba(129, 140, 248, .48); stroke-width: 1.2; }
+      .capability { fill: rgba(7, 89, 133, .16); stroke: rgba(14, 116, 144, .22); stroke-width: 1; }
+      .arrow { stroke: #67E8F9; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrowhead); }
+      .event { stroke: #34D399; stroke-width: 2; stroke-dasharray: 8 8; stroke-linecap: round; marker-end: url(#greenhead); }
+      .policy { stroke: #FBBF24; stroke-width: 2; stroke-dasharray: 6 7; stroke-linecap: round; marker-end: url(#goldhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#67E8F9"/>
+    </marker>
+    <marker id="greenhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#34D399"/>
+    </marker>
+    <marker id="goldhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10V0Z" fill="#FBBF24"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="720" rx="28" fill="url(#bg)"/>
+  <circle cx="1000" cy="104" r="210" fill="#14B8A6" opacity=".08"/>
+  <circle cx="100" cy="646" r="220" fill="#38BDF8" opacity=".08"/>
+
+  <text x="56" y="62" class="title">Agent collaboration and capability surface</text>
+  <text x="56" y="92" class="subtitle">Many product agents can share one backend contract while Aviary brokers provider-specific runtime behavior.</text>
+
+  <rect x="54" y="138" width="248" height="430" rx="26" class="card" filter="url(#shadow)"/>
+  <text x="84" y="178" class="section">Upper-layer agents</text>
+  <text x="84" y="204" class="muted">Your product owns UX and business logic</text>
+
+  <rect x="84" y="234" width="188" height="54" rx="16" class="agent"/>
+  <text x="108" y="258" class="label">Chat UI agent</text>
+  <text x="108" y="276" class="muted">conversation frontend</text>
+
+  <rect x="84" y="306" width="188" height="54" rx="16" class="agent"/>
+  <text x="108" y="330" class="label">Planner agent</text>
+  <text x="108" y="348" class="muted">task decomposition</text>
+
+  <rect x="84" y="378" width="188" height="54" rx="16" class="agent"/>
+  <text x="108" y="402" class="label">Reviewer agent</text>
+  <text x="108" y="420" class="muted">quality and security</text>
+
+  <rect x="84" y="450" width="188" height="54" rx="16" class="agent"/>
+  <text x="108" y="474" class="label">Operator agent</text>
+  <text x="108" y="492" class="muted">approvals and audit</text>
+
+  <rect x="370" y="132" width="380" height="468" rx="30" fill="url(#core)" opacity=".96" filter="url(#shadow)"/>
+  <text x="416" y="182" style="font: 900 38px Inter, ui-sans-serif, system-ui, sans-serif; fill: #052E2B;">Aviary core</text>
+  <text x="416" y="212" style="font: 700 16px Inter, ui-sans-serif, system-ui, sans-serif; fill: #075985;">stable contract for runtime-backed agents</text>
+
+  <rect x="416" y="248" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="273" class="darkLabel">Session and run lifecycle</text>
+  <rect x="416" y="304" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="329" class="darkLabel">Provider capability router</text>
+  <rect x="416" y="360" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="385" class="darkLabel">Approval broker</text>
+  <rect x="416" y="416" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="441" class="darkLabel">Skill source materializer</text>
+  <rect x="416" y="472" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="497" class="darkLabel">Sandbox driver boundary</text>
+  <rect x="416" y="528" width="288" height="42" rx="14" class="capability"/>
+  <text x="440" y="553" class="darkLabel">Normalized SSE event stream</text>
+
+  <rect x="818" y="138" width="248" height="430" rx="26" class="card" filter="url(#shadow)"/>
+  <text x="848" y="178" class="section">CLI provider runtimes</text>
+  <text x="848" y="204" class="muted">Provider-specific SDKs stay behind adapters</text>
+
+  <rect x="848" y="234" width="188" height="54" rx="16" class="provider"/>
+  <text x="872" y="258" class="label">Claude Code</text>
+  <text x="872" y="276" class="muted">SDK, skills, approvals</text>
+
+  <rect x="848" y="306" width="188" height="54" rx="16" class="provider"/>
+  <text x="872" y="330" class="label">Codex</text>
+  <text x="872" y="348" class="muted">planned provider</text>
+
+  <rect x="848" y="378" width="188" height="54" rx="16" class="provider"/>
+  <text x="872" y="402" class="label">Gemini CLI</text>
+  <text x="872" y="420" class="muted">planned provider</text>
+
+  <rect x="848" y="450" width="188" height="54" rx="16" class="provider"/>
+  <text x="872" y="474" class="label">OpenCode / ACP</text>
+  <text x="872" y="492" class="muted">planned providers</text>
+
+  <path d="M302 350H354" class="arrow"/>
+  <text x="308" y="328" class="small">HTTP API</text>
+  <text x="306" y="376" class="small">shared DTOs</text>
+
+  <path d="M750 350H802" class="arrow"/>
+  <text x="762" y="328" class="small">adapter</text>
+  <text x="756" y="376" class="small">runtime call</text>
+
+  <path d="M822 526C682 654 420 652 228 524" class="event"/>
+  <text x="430" y="654" class="small">events, approvals, audit records flow back to product agents</text>
+
+  <path d="M560 600V646H178V568" class="policy"/>
+  <text x="232" y="632" class="small">policy decisions can be made by UI, automation, or reviewer agents</text>
+
+  <rect x="54" y="620" width="248" height="52" rx="18" fill="rgba(245,158,11,.12)" stroke="rgba(251,191,36,.44)"/>
+  <text x="84" y="648" class="small">Product agents are callers, not trusted sandbox boundaries.</text>
+
+  <rect x="818" y="620" width="248" height="52" rx="18" fill="rgba(129,140,248,.12)" stroke="rgba(165,180,252,.44)"/>
+  <text x="846" y="648" class="small">Provider-native controls are normalized by Aviary contracts.</text>
+</svg>
